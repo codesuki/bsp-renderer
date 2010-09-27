@@ -1,0 +1,13 @@
+syntax: glob
+*.bmp
+*.jpg
+*.log
+*.txt
+*.bsp
+*.out
+*.ttf
+#*#
+maps
+models
+scripts
+textures
