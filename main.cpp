@@ -2,6 +2,13 @@
 #include "bsp.h"
 #include "camera.h"
 
+// convert from our coordinate system (looking down X)
+// to OpenGL's coordinate system (looking down -Z)
+GLfloat quake2oglMatrix[16] = {0, 0, -1, 0,
+                               -1, 0, 0, 0,
+                               0, 1, 0, 0,
+                               0, 0, 0, 1};
+
 int main(int argc, char **argv)
 {
   
@@ -27,18 +34,17 @@ int main(int argc, char **argv)
 
   SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);
 
-  vec3d vEyePt( 0.0, 0.0, 0.0 );
-  vec3d vLookatPt( 0.0, 0.0, 10.0 );
-  vec3d vUpVec( 0.0, 1.0, 0.0 );
-  camera g_cam(&vEyePt, &vLookatPt, &vUpVec);
+  vec3f vEyePt( 0.0, 0.0, -50.0 );
+  camera g_cam(&vEyePt);
 
   glEnable(GL_DEPTH_TEST);
   
-  bsp *map = new bsp("maps/q3dm1.bsp");
-
+  bsp *map = new bsp("maps/q3dm6.bsp");
+  unsigned int ticks = 0;
   while (true)
   {
-    g_cam.updateTime(SDL_GetTicks());
+    g_cam.updateTime(SDL_GetTicks() - ticks);
+    ticks = SDL_GetTicks(); 
     
     SDL_Event event;
         
@@ -51,17 +57,18 @@ int main(int argc, char **argv)
         exit(0);
         break;
       case SDL_MOUSEMOTION:
-        g_cam.rotate(event.motion.xrel, event.motion.yrel);
+        g_cam.pitch((float)event.motion.yrel/100.0);
+        g_cam.yaw((float)event.motion.xrel/100.0);
         break;
       case SDL_KEYDOWN:
         if(event.key.keysym.sym == SDLK_LEFT)
-          g_cam.strafe(-2.0f);
+          g_cam.strafe(-20.0f);
         if(event.key.keysym.sym == SDLK_RIGHT)
-          g_cam.strafe(2.0f);
+          g_cam.strafe(20.0f);
         if(event.key.keysym.sym == SDLK_UP)
-          g_cam.move(2.0f);
+          g_cam.move(20.0f);
         if(event.key.keysym.sym == SDLK_DOWN)
-          g_cam.move(2.0f);
+          g_cam.move(-20.0f);
         break;
       default:
         break;
@@ -70,21 +77,27 @@ int main(int argc, char **argv)
 
     glViewport(0, 0, 800, 600);
 
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45, (float)800/600, .1, 10000);
+    gluPerspective(90, (float)800/600, 1, 10000);
 
     glMatrixMode(GL_MODELVIEW);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
     glLoadIdentity(); // Reset orientation
-    gluLookAt(g_cam.m_position.x(), g_cam.m_position.y(), g_cam.m_position.z(), 
+    //glLoadMatrixf(quake2oglMatrix);
+    //glMultMatrixf(quake2oglMatrix);
+    /* gluLookAt(g_cam.m_position.x(), g_cam.m_position.y(), g_cam.m_position.z(), 
               g_cam.m_lookat.x(), g_cam.m_lookat.y(), g_cam.m_lookat.z(), 
               g_cam.m_up.x(), g_cam.m_up.y(), g_cam.m_up.z());
-        
+    */
+
+    glLoadMatrixf(g_cam.GetMatrix());
+  
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
     // Graphical commands go here
-    map->render(g_cam.m_position);
+    map->render(g_cam.position_);
 
     SDL_GL_SwapBuffers(); // Update screen
 

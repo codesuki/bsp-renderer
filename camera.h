@@ -9,20 +9,19 @@ public:
 	camera(void);
 	~camera(void);
 
-	camera(vec3d* position, vec3d* lookat, vec3d* up);
+	camera(vec3f* position);
+
+        void pitch(float pitch);
+        void yaw(float yaw);
+        mat4f GetMatrix();
 
 	void strafe(float dir);
 	void move(float dir);
-	void rotate(int x, int y);
-	void rotate(float angle, vec3f axis);
 
 	void updateTime(float time);
 
-	float m_difference;
-
-	vec3d m_position;
-	vec3d m_lookat;
-	vec3d m_up;
+        vec3f up_, right_, look_, position_;
+        float difference_, pitch_, yaw_;
 };
 
 #endif /* _CAMERA_H_ */
