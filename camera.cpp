@@ -1,6 +1,6 @@
 #include "camera.h"
 
-camera::camera(void)
+camera::camera(vec3f* position) : position_(*position)
 {
 }
 
@@ -8,68 +8,83 @@ camera::~camera(void)
 {
 }
 
-camera::camera(vec3d* position, vec3d* lookat, vec3d* up)
-{
-  m_position = *position;
-  m_lookat = *lookat;
-  m_up = *up;
-}
-
 void camera::move(float dir)
 {
-  dir = dir * m_difference;
+  dir = dir * difference_;
 
-  vec3d direction;
-  direction = m_lookat - m_position;
+  vec3f direction;
+  direction = look_ - position_;
   direction.normalize();
-  m_position += direction*dir;
-  m_lookat += direction*dir;
+  position_ += direction*dir;
+  look_ += direction*dir;
 }
 
 void camera::strafe(float dir)
 {
-  dir = dir * m_difference;
+  dir = dir * difference_;
 
-  vec3d direction;
-  direction = m_lookat - m_position;
+  vec3f direction;
+  direction = look_ - position_;
   direction.normalize();
-  direction = direction.cross(m_up);
-  m_position += direction*dir;
-  m_lookat += direction*dir;
-}
-
-void camera::rotate(int x, int y)
-{
-  if (x == 0 && y == 0) return;
-  float _x = (float)x;
-  float _y = (float)y;
-  _x /= 1000;
-  _y /= 1000;
-
-  vec3d direction;
-  direction = m_lookat - m_position;
-  direction.normalize();
-  direction = direction.cross(m_up);
-
-  rotate(_y, direction);
-  rotate(-_x, m_up);
-}
-
-void camera::rotate(float angle, vec3f axis)
-{
-  vec3d direction;
-  direction = m_lookat - m_position;
-  direction.normalize();
-
-  mat4d mY;
-  mY.rotate(angle, axis);
-  vec3d vY;
-  vY = mY * direction;
-
-  m_lookat = m_position + vY;
+  direction = direction.cross(up_);
+  position_ += direction*dir;
+  look_ += direction*dir;
 }
 
 void camera::updateTime(float time)
 {
-  m_difference = time;
+  difference_ = time;
+  
+  right_.set(1, 0, 0);
+  up_.set(0, 1, 0);
+  look_.set(0, 0, 1);
+}
+
+#define PRINT_VAR(x) std::cout << #x << " " << x << std::endl
+
+void camera::pitch(float pitch)
+{
+  PRINT_VAR(pitch_);
+  pitch_ += pitch;
+}
+
+void camera::yaw(float yaw)
+{
+  PRINT_VAR(yaw_);
+  yaw_ += yaw;
+}
+
+mat4f camera::GetMatrix()
+{
+  mat4f matrix;
+  identity(matrix);
+  matrix.rotate_z(yaw_);
+
+  right_ = matrix * right_;
+  look_ = matrix * look_;
+
+  identity(matrix);
+  matrix.rotate_x(pitch_);
+
+  up_ = matrix * up_;
+  look_ = matrix * look_;
+
+  identity(matrix);
+  matrix[0][0] = right_[0];
+  matrix[0][1] = right_[1];
+  matrix[0][2] = right_[2];
+
+  matrix[1][0] = up_[0];
+  matrix[1][1] = up_[1];
+  matrix[1][2] = up_[2];
+
+  matrix[2][0] = look_[0];
+  matrix[2][1] = look_[1];
+  matrix[2][2] = look_[2];
+
+  matrix[3][0] = -position_.dot(right_);
+  matrix[3][1] = -position_.dot(up_);
+  matrix[3][2] = -position_.dot(look_);
+
+  return matrix;
 }

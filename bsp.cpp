@@ -157,8 +157,6 @@ bsp::bsp(std::string filename)
       int widthCount    = (width - 1) / 2;
       int heightCount   = (height - 1) / 2;
 
-      std::cout << "width: " << width << " height: " << height << " widthCount: " << widthCount << " heightCount: " << heightCount << std::endl;
-
       m_patches[face].resize(widthCount*heightCount);
       for (int j = 0; j < widthCount*heightCount; ++j) {
         m_patches[face][j] = new bezier();
@@ -258,6 +256,16 @@ bsp::bsp(std::string filename)
       }
     }
   }
+
+
+	
+	
+  // for (int i = 0; i < m_num_vertexes; i++) {
+  // 	float temp = m_vertexes[i].position[1];
+  // 	m_vertexes[i].position[1] = m_vertexes[i].position[2];
+  // 	m_vertexes[i].position[2] = -temp;
+  // }
+
 }
 
 // dirty hack, shouldn't be global
@@ -580,7 +588,12 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
 
 void bsp::render(const vec3f& camera_position)
 {
-  glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), &(m_vertexes[0].position));
+
+  glEnableClientState(GL_COLOR_ARRAY);
+
+  glColorPointer(4, GL_BYTE, sizeof(bsp_vertex), &(m_vertexes[0].color));
+
+  glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), m_vertexes[0].position);
 
   // Since we are using vertex arrays, we need to tell OpenGL which texture
   // coordinates to use for each texture pass.  We switch our current texture
@@ -594,16 +607,13 @@ void bsp::render(const vec3f& camera_position)
   for (int i = 0; i < m_num_faces; i++) {
     // Before drawing this face, make sure it's a normal polygon or a mesh
     if ((POLYGON == m_faces[i].type) || (MESH == m_faces[i].type)) {
-                  
       glDrawArrays(GL_TRIANGLE_FAN, m_faces[i].vertex, m_faces[i].num_vertices);
     }
   }
-
   return;
 
-
   get_visible_faces(camera_position);
-  //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
+  std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
 
   int current_texture = -1;
@@ -651,7 +661,7 @@ void bsp::render_face(bsp_face* face)
 
     glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
 
-    glEnable(GL_TEXTURE_2D);
+    // glEnable(GL_TEXTURE_2D);
     
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[current_face.texture].name);

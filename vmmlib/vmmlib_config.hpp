@@ -12,6 +12,8 @@
 // will not work anymore.
 //#define VMMLIB_NO_CONVERSION_OPERATORS
 
+#define VMMLIB_DONT_FORCE_ALIGNMENT
+
 #ifndef VMMLIB_CUSTOM_CONFIG
 #  ifndef NDEBUG
 #    define VMMLIB_SAFE_ACCESSORS
