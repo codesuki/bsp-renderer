@@ -53,6 +53,7 @@ bsp::~bsp(void)
 bsp::bsp(std::string filename)
 {
   std::ifstream fin(filename.c_str(), std::ios::binary);
+ 
   fin.read((char*)&m_header, sizeof(bsp_header));
 
   m_entities = new bsp_entities;
@@ -157,6 +158,11 @@ bsp::bsp(std::string filename)
       int widthCount    = (width - 1) / 2;
       int heightCount   = (height - 1) / 2;
 
+      PRINT_VAR(width);
+      PRINT_VAR(height);
+      PRINT_VAR(widthCount);
+      PRINT_VAR(heightCount);
+
       m_patches[face].resize(widthCount*heightCount);
       for (int j = 0; j < widthCount*heightCount; ++j) {
         m_patches[face][j] = new bezier();
@@ -168,9 +174,14 @@ bsp::bsp(std::string filename)
             for (int col = 0; col < 3; col++) {
               m_patches[face][y * widthCount + x]->m_control_vertexes[row * 3 + col] =
                 m_vertexes[m_faces[i].vertex +(y * 2 * width + x * 2)+row * width + col];
+            PRINT_VAR(row);
+          PRINT_VAR(col); 
             }
           }
           m_patches[face][y * widthCount + x]->tessellate(10);
+          PRINT_VAR(y);
+          PRINT_VAR(x);
+          
         }
       }
     }
@@ -256,16 +267,6 @@ bsp::bsp(std::string filename)
       }
     }
   }
-
-
-	
-	
-  // for (int i = 0; i < m_num_vertexes; i++) {
-  // 	float temp = m_vertexes[i].position[1];
-  // 	m_vertexes[i].position[1] = m_vertexes[i].position[2];
-  // 	m_vertexes[i].position[2] = -temp;
-  // }
-
 }
 
 // dirty hack, shouldn't be global
@@ -546,7 +547,7 @@ void bsp::get_visible_faces(const vec3f& camera_position)
   m_already_visible.reset();
 
   for (int i = m_num_leafs-1; i >= 0; --i) {
-    if (!is_cluster_visible(cluster, m_leafs[i].cluster)) {
+    /*if (!is_cluster_visible(cluster, m_leafs[i].cluster)) {
       ++m_num_cluster_not_visible;
       continue;
     }
@@ -554,8 +555,8 @@ void bsp::get_visible_faces(const vec3f& camera_position)
     // if (!g_frustum.box_in_frustum(&D3DXVECTOR3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), &D3DXVECTOR3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
     //   ++m_num_not_in_frustum;
     //   continue;
-    // }
-
+   // }
+    */
     for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) {
       int face = m_leaffaces[j].face;
       if (m_already_visible.test(face)) {
@@ -588,8 +589,7 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
 
 void bsp::render(const vec3f& camera_position)
 {
-
-  glEnableClientState(GL_COLOR_ARRAY);
+/*  glEnableClientState(GL_COLOR_ARRAY);
 
   glColorPointer(4, GL_BYTE, sizeof(bsp_vertex), &(m_vertexes[0].color));
 
@@ -602,7 +602,9 @@ void bsp::render(const vec3f& camera_position)
 
   // Set our vertex array client states for vertices and texture coordinates
   glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
   //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
 
   for (int i = 0; i < m_num_faces; i++) {
     // Before drawing this face, make sure it's a normal polygon or a mesh
@@ -611,7 +613,7 @@ void bsp::render(const vec3f& camera_position)
     }
   }
   return;
-
+  */
   get_visible_faces(camera_position);
   std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
@@ -661,7 +663,7 @@ void bsp::render_face(bsp_face* face)
 
     glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
 
-    // glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
     
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[current_face.texture].name);
