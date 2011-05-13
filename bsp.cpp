@@ -158,11 +158,6 @@ bsp::bsp(std::string filename)
       int widthCount    = (width - 1) / 2;
       int heightCount   = (height - 1) / 2;
 
-      PRINT_VAR(width);
-      PRINT_VAR(height);
-      PRINT_VAR(widthCount);
-      PRINT_VAR(heightCount);
-
       m_patches[face].resize(widthCount*heightCount);
       for (int j = 0; j < widthCount*heightCount; ++j) {
         m_patches[face][j] = new bezier();
@@ -174,14 +169,9 @@ bsp::bsp(std::string filename)
             for (int col = 0; col < 3; col++) {
               m_patches[face][y * widthCount + x]->m_control_vertexes[row * 3 + col] =
                 m_vertexes[m_faces[i].vertex +(y * 2 * width + x * 2)+row * width + col];
-            PRINT_VAR(row);
-          PRINT_VAR(col); 
             }
           }
           m_patches[face][y * widthCount + x]->tessellate(10);
-          PRINT_VAR(y);
-          PRINT_VAR(x);
-          
         }
       }
     }
@@ -196,11 +186,18 @@ bsp::bsp(std::string filename)
 
   load_shaders();
 
+  std::cout << "checking shaders" << std::endl;
+
   for (int i = 0; i < m_num_textures; ++i) {
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[i].name);
+
+    std::cout << "checking: " << m_textures[i].name << std::endl;
+
     if (it == m_shaders.end()) 
     {
+      std::cout << "not found -> creating " << std::endl;
+
       q3_shader* shader = new q3_shader();
       q3_shader_stage* stage = new q3_shader_stage;
       stage->blendfunc[0] = -1;
@@ -229,12 +226,28 @@ bsp::bsp(std::string filename)
       shader->stages.push_back(stage);		
 
       m_shaders.insert(std::pair<std::string, q3_shader*>(m_textures[i].name, shader));
+
+      std::cout << "-> created" << std::endl;
     } 
     else 
     {
       q3_shader *shader = it->second;
+      std::cout << "shader found [" << shader->stages.size() << "]-> loading textures" << std::endl;
+
+      if (shader->stages.size() == 0)
+      {         
+        q3_shader_stage* stage = new q3_shader_stage;
+        stage->texture = NULL;
+        stage->scroll[0] = 0;
+        stage->scroll[1] = 0;
+        stage->scale[0] = 1;
+        stage->scale[1] = 1;
+        shader->stages.push_back(stage); 
+      }
+
       for (int i = 0; i < shader->stages.size(); ++i) 
       {
+        std::cout << "stage " << i << std::endl; 
         int res = 0;
         shader->stages[i]->texture = NULL;
         if (shader->stages[i]->map.compare("$whiteimage") == 0) 
@@ -247,26 +260,17 @@ bsp::bsp(std::string filename)
         } 
         else 
         {
-          res = Texture::LoadTexture(shader->stages[i]->map.c_str(), &(shader->stages[i]->texture));
-          if (res != 0) 
-          {
-            if ((shader->stages[i]->map).find(".tga", 0) != std::string::npos)
-            {
-              (shader->stages[i]->map).replace((shader->stages[i])->map.find(".tga", 0), 4, ".jpg");
-            }
-            else if (shader->stages[i]->map.find(".jpg", 0) != std::string::npos)
-            {
-              (shader->stages[i]->map).replace((shader->stages[i])->map.find(".jpg", 0), 4, ".tga");
-            }
-          }
-          res = Texture::LoadTexture(shader->stages[i]->map.c_str(), &(shader->stages[i]->texture));
+           res = Texture::LoadTexture(shader->stages[i]->map.c_str(), &(shader->stages[i]->texture));
         }
         if (res != 0) {
           shader->stages[i]->map = "noshader.tga";
         }
+
+        std::cout << "map: " << shader->stages[i]->map << std::endl;
       }
     }
   }
+  std::cout << "finished checking shaders" << std::endl;
 }
 
 // dirty hack, shouldn't be global
@@ -277,17 +281,18 @@ int read_shader(const char *file_name, const struct stat *file_info, int file_ty
   if (file_type != FTW_F) return 0;
 
   const char *filetype = file_name+strlen(file_name)-7;
-  std::cout << file_name << std::endl;
-  std::cout << filetype << std::endl;
      
   if (strcmp(filetype, ".shader")) return 0;
 
   char* buffer = new char[file_info->st_size];
-  std::string filename = "scripts/";
+
+  std::string filename = "";
   filename.append(file_name);
-  std::ifstream ifs(filename.c_str(), std::ios::binary);
+  std::ifstream ifs(filename.c_str(), std::ios::in);
+
   ifs.read(buffer, file_info->st_size);
   ifs.close();
+
   g_shaders.append(buffer, ifs.gcount());
   SAFE_DELETE_ARRAY(buffer);
 
@@ -299,9 +304,12 @@ void bsp::load_shaders()
   // load all shaders into g_shaders
   ftw("scripts/", &read_shader, 1);
 
+  std::cout << "shader buffer length: " << g_shaders.length() << std::endl;
+
   bool is_shader = false;
   std::string name = "";
   q3_shader* current_shader;
+
   for (int i = 0; i < g_shaders.length(); ++i) {
     switch (g_shaders[i]) {
     case '/':
@@ -329,6 +337,8 @@ void bsp::load_shaders()
         current_shader = new q3_shader();
         m_shaders.insert(std::pair<std::string, q3_shader*>(name, current_shader));
         is_shader = true;
+
+        std::cout << "read shader: " << name << std::endl;
       }
 				
       break;
@@ -589,33 +599,8 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
 
 void bsp::render(const vec3f& camera_position)
 {
-/*  glEnableClientState(GL_COLOR_ARRAY);
-
-  glColorPointer(4, GL_BYTE, sizeof(bsp_vertex), &(m_vertexes[0].color));
-
-  glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), m_vertexes[0].position);
-
-  // Since we are using vertex arrays, we need to tell OpenGL which texture
-  // coordinates to use for each texture pass.  We switch our current texture
-  // to the first one, then set our texture coordinates.
-  //glTexCoordPointer(2, GL_FLOAT, sizeof(TBSPVertex), @Vertices[0].TextureCoord);
-
-  // Set our vertex array client states for vertices and texture coordinates
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
-  //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-
-  for (int i = 0; i < m_num_faces; i++) {
-    // Before drawing this face, make sure it's a normal polygon or a mesh
-    if ((POLYGON == m_faces[i].type) || (MESH == m_faces[i].type)) {
-      glDrawArrays(GL_TRIANGLE_FAN, m_faces[i].vertex, m_faces[i].num_vertices);
-    }
-  }
-  return;
-  */
   get_visible_faces(camera_position);
-  std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
+  //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
 
   int current_texture = -1;
@@ -649,7 +634,7 @@ void bsp::render(const vec3f& camera_position)
 
 void bsp::render_face(bsp_face* face)
 {
-  if (face->type == POLYGON) 
+  if (face->type == POLYGON || face->type == MESH) 
   {
     const bsp_face &current_face = *face;
     static const int stride = sizeof(bsp_vertex); // BSP Vertex, not float[3]
@@ -659,17 +644,21 @@ void bsp::render_face(bsp_face* face)
     
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
+    //glEnableClientState(GL_COLOR_ARRAY);
 
-    glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
+    //glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
 
     glEnable(GL_TEXTURE_2D);
     
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[current_face.texture].name);
-    
+
+    glClientActiveTextureARB(GL_TEXTURE0_ARB);
     glBindTexture(GL_TEXTURE_2D, it->second->stages[0]->texture);
 
+    if (it->second->stages[0]->texture == NULL)
+        glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
+         
     glVertexPointer(3, GL_FLOAT, stride, &(m_vertexes[offset].position));
 
     glClientActiveTextureARB(GL_TEXTURE0_ARB);
@@ -682,8 +671,46 @@ void bsp::render_face(bsp_face* face)
                    GL_UNSIGNED_INT, &(m_meshverts[current_face.meshvert]));
   } 
   else if (face->type == PATCH) 
-  {
+  {  
+        const bsp_face &current_face = *face;
+        static const int stride = sizeof(bsp_vertex);
+        const int offset = current_face.vertex;
 
+        std::vector<bezier*> patches = m_patches[face];
+
+        std::map<std::string, q3_shader*>::iterator it;
+        it = m_shaders.find(m_textures[current_face.texture].name);
+    
+        //std::cout << m_textures[current_face.texture].name << std::endl; 
+        //std::cout << it->second->stages[0]->texture << std::endl;
+
+        glClientActiveTextureARB(GL_TEXTURE0_ARB);
+        glBindTexture(GL_TEXTURE_2D, it->second->stages[0]->texture);
+
+        if (it->second->stages[0]->texture == NULL)
+            glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
+
+        //glClientActiveTextureARB(GL_TEXTURE1_ARB);
+        //glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
+
+        for (int i = 0; i < patches.size(); ++i) {
+            const bezier* b = patches[i];
+            const bsp_vertex* vertexes = b->m_vertexes;
+            const unsigned int* indexes = b->m_indexes;
+            
+            glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].position);
+
+            glClientActiveTextureARB(GL_TEXTURE0_ARB);
+            glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].texcoord);
+
+            //glClientActiveTextureARB(GL_TEXTURE1_ARB);
+            //glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].lmcoord);
+    
+            for (int j = 0; j < 10; j++) 
+            {
+                glDrawElements(GL_TRIANGLE_STRIP, 11*2, GL_UNSIGNED_INT, &(indexes[11*j*2]));
+            }
+        }
   } //else if (m_faces[face].type == BILLBOARD) {
 }
 

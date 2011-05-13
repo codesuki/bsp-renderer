@@ -4,6 +4,8 @@ bezier::bezier(void)
 {
 	m_vertexes = NULL;
 	m_indexes = NULL;
+    m_row_indexes = NULL;
+    m_tri_per_row = NULL;
 }
 
 bezier::~bezier(void)
@@ -80,16 +82,19 @@ void bezier::tessellate(int subdivisions)
 	//	//m_vertexes[i].color[3] = 0xaa;
 	//}
 
-	for (int i = 0; i <= subdivisions; ++i) {
+	for (int i = 0; i <= subdivisions; ++i) 
+    {
 		float l = (float)i/subdivisions;
 
-		for (int j = 0; j < 3; ++j) {
+		for (int j = 0; j < 3; ++j) 
+        {
 			int k = 3 * j;
 			temp[j] = calculate_quadratic_bezier(l, &(m_control_vertexes[k]));
 		}
 
 		int col = 0;
-		for(int j = 0; j <= subdivisions; ++j) {
+		for(int j = 0; j <= subdivisions; ++j)
+        {
 			float a = (float)j / subdivisions;
 
 			m_vertexes[i * subdivisions1 + j] = calculate_quadratic_bezier(a, temp);
@@ -103,8 +108,15 @@ void bezier::tessellate(int subdivisions)
 	if (m_indexes != NULL) delete [] m_indexes;
 	m_indexes = new unsigned int[subdivisions * subdivisions1 * 2];
 
+	if (m_row_indexes != NULL) delete [] m_row_indexes;
+    m_row_indexes = new unsigned int[subdivisions];
+
+    if (m_tri_per_row != NULL) delete [] m_tri_per_row;
+    m_tri_per_row = new unsigned int[subdivisions];
+     
 	// TODO: rewrite this so only 1 call to DrawIndexedPrimitive can be used !
-	for (row = 0; row < subdivisions; ++row) {
+	for (row = 0; row < subdivisions; ++row)
+    {
 		for(int col = 0; col <= subdivisions; ++col)	{
 			int g = (row * (subdivisions1) + col) * 2 + 1;
 			int h = (row * (subdivisions1) + col) * 2;
@@ -112,5 +124,11 @@ void bezier::tessellate(int subdivisions)
 			m_indexes[h] = (row + 1) * subdivisions1 + col;
 		}
 	}
+
+    for (row = 0; row < subdivisions; ++row) 
+    {
+        m_tri_per_row[row] = 2 * subdivisions1;
+        m_row_indexes = &m_indexes[row * 2 * subdivisions1];
+    }
 }
 

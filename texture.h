@@ -10,8 +10,13 @@ public:
   // try to load jpg, if not available tga
   static int LoadTexture(std::string filename, GLuint* texture) 
   {
-    std::cout << "texture: " << filename << std::endl;
+    if (filename.length() == 0) return -1;
 
+    std::cout << "loading texture: " << filename << std::endl;
+
+    if (filename.find('.') != std::string::npos)
+        filename.erase(filename.end()-4, filename.end());
+    
     std::string filename_tga = filename;
     filename_tga.append(".tga");
     
