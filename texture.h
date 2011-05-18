@@ -27,12 +27,12 @@ public:
     image = IMG_Load(filename_jpg.c_str());
     if (!image) 
     {
-      printf("IMG_Load: %s\n", IMG_GetError());
+      printf("%s\n", IMG_GetError());
 
       image = IMG_Load(filename_tga.c_str());
       if (!image) 
       {
-        printf("IMG_Load: %s\n", IMG_GetError());
+        printf("%s\n", IMG_GetError());
         return -1;
       }
     }
@@ -67,10 +67,33 @@ public:
  
     // Edit the texture object's image data using the information SDL_Surface gives us
     glTexImage2D(GL_TEXTURE_2D, 0, num_colors, image->w, image->h, 0,
-                 texture_format, GL_UNSIGNED_BYTE, image->pixels );
+                 texture_format, GL_UNSIGNED_BYTE, image->pixels);
 
     SAFE_DELETE(image);
     
+    return 0;
+  }
+
+  static int loadLightmap(bsp_lightmap& lightmap, GLuint* texture)
+  {
+    SDL_Surface *image = SDL_CreateRGBSurfaceFrom(static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
+
+    // Have OpenGL generate a texture object handle for us
+    glGenTextures(1, texture);
+
+    // Bind the texture object
+    glBindTexture(GL_TEXTURE_2D, *texture);
+ 
+    // Set the texture's stretching properties
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+ 
+    // Edit the texture object's image data using the information SDL_Surface gives us
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, image->w, image->h, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels );
+
+    SAFE_DELETE(image);
+     
     return 0;
   }
 };

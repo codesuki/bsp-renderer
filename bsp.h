@@ -231,11 +231,17 @@ public:
   void load_shaders();
   int parse_shader_stage(const std::string* shader, int offset, q3_shader_stage* stage);
   std::map<std::string, q3_shader*> m_shaders;
+  
+  void load_lightmaps();
+  void prepare_shader(const q3_shader& shader, const bsp_vertex& vertex, int lmindex);
+  void end_shader(const q3_shader& shader);
 
   std::bitset<10000> m_already_visible;
   std::map<bsp_face*, std::vector<bezier*> > m_patches;
   std::vector<bsp_face*> m_opaque_faces;
   std::vector<int> m_translucent_faces;
+
+  GLuint* lightmaps_;
 
   // some status variables for outputting info
   int m_num_cluster_not_visible;
