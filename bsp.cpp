@@ -5,7 +5,7 @@
 
 bsp::bsp(void)
 {
-    
+
 }
 
 bsp::~bsp(void)
@@ -40,8 +40,10 @@ bsp::~bsp(void)
 
   {
     std::map<std::string, q3_shader*>::iterator it;
-    for (it = m_shaders.begin(); it != m_shaders.end(); ++it) {
-      for (int i = 0; i < (*it).second->stages.size(); ++i) {
+    for (it = m_shaders.begin(); it != m_shaders.end(); ++it) 
+    {
+      for (int i = 0; i < (*it).second->stages.size(); ++i) 
+      {
         // TODO free textures
         SAFE_DELETE((*it).second->stages[i]);
       }
@@ -53,7 +55,7 @@ bsp::~bsp(void)
 bsp::bsp(std::string filename)
 {
   std::ifstream fin(filename.c_str(), std::ios::binary);
- 
+
   fin.read((char*)&m_header, sizeof(bsp_header));
 
   m_entities = new bsp_entities;
@@ -128,7 +130,7 @@ bsp::bsp(std::string filename)
 
   fin.seekg(m_header.direntries[LUMP_MESHVERTS].offset);
   fin.read((char*)m_meshverts, m_header.direntries[LUMP_MESHVERTS].length);
- 
+
   fin.seekg(m_header.direntries[LUMP_EFFECTS].offset);
   fin.read((char*)m_effects, m_header.direntries[LUMP_EFFECTS].length);
 
@@ -137,7 +139,7 @@ bsp::bsp(std::string filename)
 
   fin.seekg(m_header.direntries[LUMP_LIGHTMAPS].offset);
   fin.read((char*)m_lightmaps, m_header.direntries[LUMP_LIGHTMAPS].length);
- 
+
   fin.seekg(m_header.direntries[LUMP_LIGHTVOLS].offset);
   fin.read((char*)m_lightvols, m_header.direntries[LUMP_LIGHTVOLS].length);
 
@@ -149,8 +151,10 @@ bsp::bsp(std::string filename)
   fin.close();
 
   // prepare patch data + tesselate
-  for (int i = 0; i < m_num_faces; ++i) {
-    if (m_faces[i].type == PATCH) {
+  for (int i = 0; i < m_num_faces; ++i) 
+  {
+    if (m_faces[i].type == PATCH) 
+    {
       bsp_face* face = &(m_faces[i]);
 
       int width         = m_faces[i].size[0];
@@ -159,14 +163,19 @@ bsp::bsp(std::string filename)
       int heightCount   = (height - 1) / 2;
 
       m_patches[face].resize(widthCount*heightCount);
-      for (int j = 0; j < widthCount*heightCount; ++j) {
+      for (int j = 0; j < widthCount*heightCount; ++j) 
+      {
         m_patches[face][j] = new bezier();
       }
 
-      for (int y = 0; y < heightCount; y++) {
-        for (int x = 0; x < widthCount; x++) {
-          for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
+      for (int y = 0; y < heightCount; y++) 
+      {
+        for (int x = 0; x < widthCount; x++) 
+        {
+          for (int row = 0; row < 3; row++) 
+          {
+            for (int col = 0; col < 3; col++) 
+            {
               m_patches[face][y * widthCount + x]->m_control_vertexes[row * 3 + col] =
                 m_vertexes[m_faces[i].vertex +(y * 2 * width + x * 2)+row * width + col];
             }
@@ -177,18 +186,20 @@ bsp::bsp(std::string filename)
     }
   }
 
-  // for (int i = 0; i < m_num_vertexes; ++i) {
-  //     m_vertexes[i].color[0] = 0xff;
-  //     m_vertexes[i].color[1] = 0xff;
-  //     m_vertexes[i].color[2] = 0xff;
-  //     m_vertexes[i].color[3] = 0xff;
-  // }
+  for (int i = 0; i < m_num_vertexes; ++i) 
+  {
+    m_vertexes[i].color[0] = 0xff;
+    m_vertexes[i].color[1] = 0xff;
+    m_vertexes[i].color[2] = 0xff;
+    m_vertexes[i].color[3] = 0xff;
+  }
 
   load_shaders();
 
   std::cout << "checking shaders" << std::endl;
 
-  for (int i = 0; i < m_num_textures; ++i) {
+  for (int i = 0; i < m_num_textures; ++i) 
+  {
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[i].name);
 
@@ -234,8 +245,8 @@ bsp::bsp(std::string filename)
       q3_shader *shader = it->second;
       std::cout << "shader found [" << shader->stages.size() << "]-> loading textures" << std::endl;
 
-      if (shader->stages.size() == 0)
-      {         
+      /*if (shader->stages.size() == 0)
+        {         
         q3_shader_stage* stage = new q3_shader_stage;
         stage->texture = NULL;
         stage->scroll[0] = 0;
@@ -243,7 +254,7 @@ bsp::bsp(std::string filename)
         stage->scale[0] = 1;
         stage->scale[1] = 1;
         shader->stages.push_back(stage); 
-      }
+        } */
 
       for (int i = 0; i < shader->stages.size(); ++i) 
       {
@@ -260,7 +271,7 @@ bsp::bsp(std::string filename)
         } 
         else 
         {
-           res = Texture::LoadTexture(shader->stages[i]->map.c_str(), &(shader->stages[i]->texture));
+          res = Texture::LoadTexture(shader->stages[i]->map.c_str(), &(shader->stages[i]->texture));
         }
         if (res != 0) {
           shader->stages[i]->map = "noshader.tga";
@@ -270,7 +281,21 @@ bsp::bsp(std::string filename)
       }
     }
   }
-  std::cout << "finished checking shaders" << std::endl;
+  std::cout << "finished checking shaders" << std::endl;         
+
+  load_lightmaps();
+
+  std::cout << "finished loading lightmaps" << std::endl;
+}  
+
+
+void bsp::load_lightmaps()
+{
+  lightmaps_ = new GLuint[m_num_lightmaps];
+  for (int i = 0; i < m_num_lightmaps; ++i)
+  {
+    Texture::loadLightmap(m_lightmaps[i], &(lightmaps_[i]));  
+  }
 }
 
 // dirty hack, shouldn't be global
@@ -281,7 +306,7 @@ int read_shader(const char *file_name, const struct stat *file_info, int file_ty
   if (file_type != FTW_F) return 0;
 
   const char *filetype = file_name+strlen(file_name)-7;
-     
+
   if (strcmp(filetype, ".shader")) return 0;
 
   char* buffer = new char[file_info->st_size];
@@ -310,49 +335,55 @@ void bsp::load_shaders()
   std::string name = "";
   q3_shader* current_shader;
 
-  for (int i = 0; i < g_shaders.length(); ++i) {
-    switch (g_shaders[i]) {
-    case '/':
-      if (g_shaders[i+1] == '/') {
-        i = g_shaders.find("\r\n", i);
-        break;
-      } 
-      else {
-        name.append(1, '/');
-        break;
-      }
-    case '{':
-      if (is_shader == true) {
-        // sub-shader found
-        q3_shader_stage* stage = new q3_shader_stage;
-        stage->texture = NULL;
-        stage->scroll[0] = 0;
-        stage->scroll[1] = 0;
-        stage->scale[0] = 1;
-        stage->scale[1] = 1;
-        i = parse_shader_stage(&g_shaders, i, stage);
-        current_shader->stages.push_back(stage);
-      } 
-      else {
-        current_shader = new q3_shader();
-        m_shaders.insert(std::pair<std::string, q3_shader*>(name, current_shader));
-        is_shader = true;
+  for (int i = 0; i < g_shaders.length(); ++i) 
+  {
+    switch (g_shaders[i]) 
+    {
+      case '/':
+        if (g_shaders[i+1] == '/') 
+        {
+          i = g_shaders.find("\r\n", i);
+          break;
+        } 
+        else 
+        {
+          name.append(1, '/');
+          break;
+        }
+      case '{':
+        if (is_shader == true) 
+        {
+          // sub-shader found
+          q3_shader_stage* stage = new q3_shader_stage;
+          stage->texture = NULL;
+          stage->scroll[0] = 0;
+          stage->scroll[1] = 0;
+          stage->scale[0] = 1;
+          stage->scale[1] = 1;
+          i = parse_shader_stage(&g_shaders, i, stage);
+          current_shader->stages.push_back(stage);
+        } 
+        else 
+        {
+          current_shader = new q3_shader();
+          m_shaders.insert(std::pair<std::string, q3_shader*>(name, current_shader));
+          is_shader = true;
 
-        std::cout << "read shader: " << name << std::endl;
-      }
-				
-      break;
-    case '}':
-      name = "";
-      is_shader = false;
-      break;
-    case ' ':
-      break;
-    case 0x09: break;
-    case 0x0A: break;
-    case 0x0D: break;
-    default:
-      name.append(1, g_shaders[i]);
+          std::cout << "read shader: " << name << std::endl;
+        }
+
+        break;
+      case '}':
+        name = "";
+        is_shader = false;
+        break;
+      case ' ':
+        break;
+      case 0x09: break;
+      case 0x0A: break;
+      case 0x0D: break;
+      default:
+                 name.append(1, g_shaders[i]);
     }
   }
 }
@@ -363,53 +394,69 @@ int get_token_end_pos(const std::string* buffer, int offset)
   {
     switch ((*buffer)[offset]) 
     {
-    case ' ': return offset;
-    case 0x09: return offset;
-    case 0x0A: return offset;
-    case 0x0D: return offset;
+      case ' ': 
+        return offset;
+      case 0x09: 
+        return offset;
+      case 0x0A: 
+        return offset;
+      case 0x0D: 
+        return offset;
     }
     ++offset;
   }
 }
 
 int get_blend_func(std::string name) {
-  if (strcasecmp("GL_SRC_ALPHA", name.c_str()) == 0) {
+  if (strcasecmp("GL_SRC_ALPHA", name.c_str()) == 0) 
+  {
     return GL_SRC_ALPHA;
   } 
-  else if (strcasecmp("GL_ONE_MINUS_SRC_ALPHA", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ONE_MINUS_SRC_ALPHA", name.c_str()) == 0) 
+  {
     return GL_ONE_MINUS_SRC_ALPHA;
   } 
-  else if (strcasecmp("GL_ONE", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ONE", name.c_str()) == 0) 
+  {
     return GL_ONE;
   } 
-  else if (strcasecmp("GL_ZERO", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ZERO", name.c_str()) == 0) 
+  {
     return GL_ZERO;
   } 
-  else if (strcasecmp("GL_DST_COLOR", name.c_str()) == 0) {
+  else if (strcasecmp("GL_DST_COLOR", name.c_str()) == 0) 
+  {
     return GL_DST_COLOR;
   } 
-  else if (strcasecmp("GL_ONE_MINUS_DST_COLOR", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ONE_MINUS_DST_COLOR", name.c_str()) == 0) 
+  {
     return GL_ONE_MINUS_DST_COLOR;
   } 
-  else if (strcasecmp("GL_ONE_MINUS_SRC_COLOR", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ONE_MINUS_SRC_COLOR", name.c_str()) == 0) 
+  {
     return GL_ONE_MINUS_SRC_COLOR;
   } 
-  else if (strcasecmp("GL_ONE_MINUS_DST_ALPHA", name.c_str()) == 0) {
+  else if (strcasecmp("GL_ONE_MINUS_DST_ALPHA", name.c_str()) == 0) 
+  {
     return GL_ONE_MINUS_DST_ALPHA;
   } 
-  else if (strcasecmp("GL_SRC_COLOR", name.c_str()) == 0) {
+  else if (strcasecmp("GL_SRC_COLOR", name.c_str()) == 0) 
+  {
     return GL_SRC_COLOR;
   }
 }
 
 int get_alpha_func(std::string name) {
-  if (strcasecmp("GT0", name.c_str()) == 0) {
+  if (strcasecmp("GT0", name.c_str()) == 0) 
+  {
     return 0;
   } 
-  else if (strcasecmp("LT128", name.c_str()) == 0) {
+  else if (strcasecmp("LT128", name.c_str()) == 0) 
+  {
     return 0;
   } 
-  else if (strcasecmp("GE128", name.c_str()) == 0) {
+  else if (strcasecmp("GE128", name.c_str()) == 0) 
+  {
     return 0;
   }
 }
@@ -417,85 +464,98 @@ int get_alpha_func(std::string name) {
 int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_stage* stage)
 {
   int i = offset;
-  for (; i < shaders->length(); ++i) {
-    switch ((*shaders)[i]) {
-    case '{': break;
-    case '}': return i;
-    case ' ': break;
-    case 0x09: break;
-    case 0x0A: break;
-    case 0x0D: break;
-    default:
-      int end_pos = get_token_end_pos(shaders, i);
-      std::string token = shaders->substr(i, end_pos-i);
-      i = ++end_pos;
+  for (; i < shaders->length(); ++i) 
+  {
+    switch ((*shaders)[i]) 
+    {
+      case '{': break;
+      case '}': return i;
+      case ' ': break;
+      case 0x09: break;
+      case 0x0A: break;
+      case 0x0D: break;
+      default:
+                 int end_pos = get_token_end_pos(shaders, i);
+                 std::string token = shaders->substr(i, end_pos-i);
+                 i = ++end_pos;
 
-      if (strcasecmp("map", token.c_str()) == 0 || strcasecmp("clampmap", token.c_str()) == 0) {
-        end_pos = shaders->find("\r\n", i);
-        token = shaders->substr(i, end_pos-i);
-        i = end_pos;
-        stage->map = token;
-        stage->map.erase(0, stage->map.find_first_not_of(' '));
-        i = shaders->find("\r\n", i);
-      } 
-      else if (strcasecmp("blendfunc", token.c_str()) == 0) {
-        end_pos = get_token_end_pos(shaders, i);
-        token = shaders->substr(i, end_pos-i);
-        i = ++end_pos;
-        if (token.compare("add") == 0) {
-          stage->blendfunc[0] = get_blend_func("GL_ONE");
-          stage->blendfunc[1] = get_blend_func("GL_ONE");
-        } 
-        else if (token.compare("filter") == 0) {
-          stage->blendfunc[0] = get_blend_func("GL_DST_COLOR");
-          stage->blendfunc[1] = get_blend_func("GL_ONE");
-        } 
-        else if (token.compare("blend") == 0) {
-          stage->blendfunc[0] = get_blend_func("GL_SRC_ALPHA");
-          stage->blendfunc[1] = get_blend_func("GL_ONE_MINUS_SRC_ALPHA");
-        } 
-        else {
-          stage->blendfunc[0] = get_blend_func(token);
-          end_pos = get_token_end_pos(shaders, i);
-          token = shaders->substr(i, end_pos-i);
-          i = end_pos;
-          stage->blendfunc[1] = get_blend_func(token);
-        }
-      } 
-      else if (strcasecmp("alphafunc", token.c_str()) == 0) {
-        end_pos = get_token_end_pos(shaders, i);
-        token = shaders->substr(i, end_pos-i);
-        i = ++end_pos;
-        stage->alphafunc = get_alpha_func(token);
-      } 
-      else if (strcasecmp("tcmod", token.c_str()) == 0) {
-        end_pos = get_token_end_pos(shaders, i);
-        token = shaders->substr(i, end_pos-i);
-        i = ++end_pos;
-        if (strcasecmp("scroll", token.c_str()) == 0) {
-          end_pos = get_token_end_pos(shaders, i);
-          token = shaders->substr(i, end_pos-i);
-          i = ++end_pos;
-          stage->scroll[0] = atof(token.c_str());
-          end_pos = get_token_end_pos(shaders, i);
-          token = shaders->substr(i, end_pos-i);
-          i = ++end_pos;
-          stage->scroll[1] = atof(token.c_str());
-        } 
-        else if (strcasecmp("scale", token.c_str()) == 0) {
-          end_pos = get_token_end_pos(shaders, i);
-          token = shaders->substr(i, end_pos-i);
-          i = ++end_pos;
-          stage->scale[0] = atof(token.c_str());
-          end_pos = get_token_end_pos(shaders, i);
-          token = shaders->substr(i, end_pos-i);
-          i = ++end_pos;
-          stage->scale[1] = atof(token.c_str());
-        }
-      } 
-      else {
-        i = shaders->find("\r\n", i);
-      }
+                 if (strcasecmp("map", token.c_str()) == 0 || strcasecmp("clampmap", token.c_str()) == 0) 
+                 {
+                   end_pos = shaders->find("\r\n", i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = end_pos;
+                   stage->map = token;
+                   stage->map.erase(0, stage->map.find_first_not_of(' '));
+                   i = shaders->find("\r\n", i);
+                 } 
+                 else if (strcasecmp("blendfunc", token.c_str()) == 0) 
+                 {
+                   end_pos = get_token_end_pos(shaders, i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = ++end_pos;
+                   if (token.compare("add") == 0) 
+                   {
+                     stage->blendfunc[0] = get_blend_func("GL_ONE");
+                     stage->blendfunc[1] = get_blend_func("GL_ONE");
+                   } 
+                   else if (token.compare("filter") == 0)
+                   {
+                     stage->blendfunc[0] = get_blend_func("GL_DST_COLOR");
+                     stage->blendfunc[1] = get_blend_func("GL_ONE");
+                   } 
+                   else if (token.compare("blend") == 0) 
+                   {
+                     stage->blendfunc[0] = get_blend_func("GL_SRC_ALPHA");
+                     stage->blendfunc[1] = get_blend_func("GL_ONE_MINUS_SRC_ALPHA");
+                   } 
+                   else 
+                   {
+                     stage->blendfunc[0] = get_blend_func(token);
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = end_pos;
+                     stage->blendfunc[1] = get_blend_func(token);
+                   }
+                 } 
+                 else if (strcasecmp("alphafunc", token.c_str()) == 0) 
+                 {
+                   end_pos = get_token_end_pos(shaders, i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = ++end_pos;
+                   stage->alphafunc = get_alpha_func(token);
+                 } 
+                 else if (strcasecmp("tcmod", token.c_str()) == 0) 
+                 {
+                   end_pos = get_token_end_pos(shaders, i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = ++end_pos;
+                   if (strcasecmp("scroll", token.c_str()) == 0) 
+                   {
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->scroll[0] = atof(token.c_str());
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->scroll[1] = atof(token.c_str());
+                   } 
+                   else if (strcasecmp("scale", token.c_str()) == 0) 
+                   {
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->scale[0] = atof(token.c_str());
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->scale[1] = atof(token.c_str());
+                   }
+                 } 
+                 else 
+                 {
+                   i = shaders->find("\r\n", i);
+                 }
     }
   }
   return i;
@@ -505,7 +565,8 @@ int bsp::find_leaf(const vec3f& camera_position)
 {
   int index = 0;
 
-  while (index >= 0) {
+  while (index >= 0) 
+  {
     const bsp_node& node = m_nodes[index];
     const vec4f& plane = m_planes[node.plane];
 
@@ -556,20 +617,23 @@ void bsp::get_visible_faces(const vec3f& camera_position)
 
   m_already_visible.reset();
 
-  for (int i = m_num_leafs-1; i >= 0; --i) {
+  for (int i = m_num_leafs-1; i >= 0; --i)
+  {
     /*if (!is_cluster_visible(cluster, m_leafs[i].cluster)) {
       ++m_num_cluster_not_visible;
       continue;
-    }
+      }
 
     // if (!g_frustum.box_in_frustum(&D3DXVECTOR3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), &D3DXVECTOR3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
     //   ++m_num_not_in_frustum;
     //   continue;
-   // }
+    // }
     */
-    for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) {
+    for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) 
+    {
       int face = m_leaffaces[j].face;
-      if (m_already_visible.test(face)) {
+      if (m_already_visible.test(face))
+      {
         ++m_num_skipped_faces;
         continue;
       }
@@ -580,7 +644,7 @@ void bsp::get_visible_faces(const vec3f& camera_position)
       //if (g_textures[m_faces[face].texture]->Format == D3DFMT_A8R8G8B8) {
       //	m_translucent_faces.push_back(face);
       //} else {
-				
+
       m_opaque_faces.push_back(&(m_faces[face]));
       //}
     }
@@ -589,7 +653,8 @@ void bsp::get_visible_faces(const vec3f& camera_position)
 
 bool faceSort(const bsp_face* left, const bsp_face* right)
 {
-  if (left->texture == right->texture) {
+  if (left->texture == right->texture) 
+  {
     if (left->lm_index < right->lm_index) return true;
     return false;
   } 
@@ -622,7 +687,7 @@ void bsp::render(const vec3f& camera_position)
 
     render_face(m_opaque_faces[i]);
   }
-	
+
   //pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
   //pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
   //pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
@@ -632,85 +697,116 @@ void bsp::render(const vec3f& camera_position)
   //}
 }
 
+void bsp::end_shader(const q3_shader& shader)
+{
+  for (int i = 0; i < shader.stages.size(); ++i)
+  {
+    glActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glClientActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glBindTexture(GL_TEXTURE_2D, 0); 
+    glDisable(GL_TEXTURE_2D);
+  }
+}
+
+void bsp::prepare_shader(const q3_shader& shader, const bsp_vertex& vertex, int lm_index)
+{  
+  for (int i = 0; i < shader.stages.size(); ++i)
+  {
+    glActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glClientActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnable(GL_TEXTURE_2D);
+
+    if (shader.stages[i]->blendfunc[0] == GL_ONE && shader.stages[i]->blendfunc[1] == GL_ZERO)
+    {  
+      glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_REPLACE);
+    }
+    else if (shader.stages[i]->blendfunc[0] == GL_DST_COLOR && shader.stages[i]->blendfunc[1] == GL_ZERO)
+    {
+      glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    }
+    else if (shader.stages[i]->blendfunc[0] == GL_SRC_ALPHA &&
+        shader.stages[i]->blendfunc[1] == GL_ONE_MINUS_SRC_ALPHA)
+    {
+      glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_BLEND);
+    }
+    else if (shader.stages[i]->blendfunc[0] == GL_ONE && shader.stages[i]->blendfunc[1] == GL_ONE)
+    {
+      glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_ADD);
+    }
+    else
+    {
+      glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_REPLACE);
+    }
+
+    if (shader.stages[i]->map.compare("$lightmap") == 0)
+    {
+      glBindTexture(GL_TEXTURE_2D, lightmaps_[lm_index]);
+      glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), &(vertex.lmcoord));
+    }
+    else
+    {
+      glBindTexture(GL_TEXTURE_2D, shader.stages[i]->texture);
+      glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), &(vertex.texcoord));
+    } 
+  } 
+}
+
 void bsp::render_face(bsp_face* face)
 {
+  //glDisable(GL_LIGHTING);
+  glEnable(GL_TEXTURE_2D);
+  //glEnable(GL_BLEND);
+  glEnable(GL_DEPTH_TEST);    
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  //glEnableClientState(GL_COLOR_ARRAY);
+  //glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
+
+  const bsp_face &current_face = *face;
+  static const int stride = sizeof(bsp_vertex); // BSP Vertex, not float[3]
+  const int offset = current_face.vertex;
+
   if (face->type == POLYGON || face->type == MESH) 
   {
-    const bsp_face &current_face = *face;
-    static const int stride = sizeof(bsp_vertex); // BSP Vertex, not float[3]
-    const int offset = current_face.vertex;
-
     if (offset >= m_num_vertexes) return;
-    
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    //glEnableClientState(GL_COLOR_ARRAY);
 
-    //glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
-
-    glEnable(GL_TEXTURE_2D);
-    
     std::map<std::string, q3_shader*>::iterator it;
     it = m_shaders.find(m_textures[current_face.texture].name);
 
-    glClientActiveTextureARB(GL_TEXTURE0_ARB);
-    glBindTexture(GL_TEXTURE_2D, it->second->stages[0]->texture);
+    prepare_shader(*(it->second), m_vertexes[offset], current_face.lm_index);
 
-    if (it->second->stages[0]->texture == NULL)
-        glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
-         
     glVertexPointer(3, GL_FLOAT, stride, &(m_vertexes[offset].position));
 
-    glClientActiveTextureARB(GL_TEXTURE0_ARB);
-    glTexCoordPointer(2, GL_FLOAT, stride, &(m_vertexes[offset].texcoord));
-
-    //glClientActiveTextureARB(GL_TEXTURE1_ARB);
-    //glTexCoordPointer(2, GL_FLOAT, stride, &(m_vertexes[offset].lmcoord));
-
     glDrawElements(GL_TRIANGLES, current_face.num_meshverts,
-                   GL_UNSIGNED_INT, &(m_meshverts[current_face.meshvert]));
+        GL_UNSIGNED_INT, &(m_meshverts[current_face.meshvert]));
+
+    end_shader(*(it->second));
   } 
   else if (face->type == PATCH) 
   {  
-        const bsp_face &current_face = *face;
-        static const int stride = sizeof(bsp_vertex);
-        const int offset = current_face.vertex;
+    std::vector<bezier*> patches = m_patches[face];
 
-        std::vector<bezier*> patches = m_patches[face];
+    std::map<std::string, q3_shader*>::iterator it;
+    it = m_shaders.find(m_textures[current_face.texture].name);
 
-        std::map<std::string, q3_shader*>::iterator it;
-        it = m_shaders.find(m_textures[current_face.texture].name);
-    
-        //std::cout << m_textures[current_face.texture].name << std::endl; 
-        //std::cout << it->second->stages[0]->texture << std::endl;
+    for (int i = 0; i < patches.size(); ++i) 
+    {
+      const bezier* b = patches[i];
+      const bsp_vertex* vertexes = b->m_vertexes;
+      const unsigned int* indexes = b->m_indexes;
 
-        glClientActiveTextureARB(GL_TEXTURE0_ARB);
-        glBindTexture(GL_TEXTURE_2D, it->second->stages[0]->texture);
+      glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].position);
 
-        if (it->second->stages[0]->texture == NULL)
-            glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
+      prepare_shader(*(it->second), vertexes[0], current_face.lm_index);
 
-        //glClientActiveTextureARB(GL_TEXTURE1_ARB);
-        //glBindTexture(GL_TEXTURE_2D, it->second->stages[1]->texture);
+      for (int j = 0; j < 10; j++) 
+      {
+        glDrawElements(GL_TRIANGLE_STRIP, 11*2, GL_UNSIGNED_INT, &(indexes[11*j*2]));
+      }
 
-        for (int i = 0; i < patches.size(); ++i) {
-            const bezier* b = patches[i];
-            const bsp_vertex* vertexes = b->m_vertexes;
-            const unsigned int* indexes = b->m_indexes;
-            
-            glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].position);
-
-            glClientActiveTextureARB(GL_TEXTURE0_ARB);
-            glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].texcoord);
-
-            //glClientActiveTextureARB(GL_TEXTURE1_ARB);
-            //glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].lmcoord);
-    
-            for (int j = 0; j < 10; j++) 
-            {
-                glDrawElements(GL_TRIANGLE_STRIP, 11*2, GL_UNSIGNED_INT, &(indexes[11*j*2]));
-            }
-        }
+      end_shader(*(it->second));
+    }
   } //else if (m_faces[face].type == BILLBOARD) {
 }
 
@@ -718,6 +814,7 @@ q3_shader::q3_shader()
 {
   m_current_stage = 0;
 }
+
 q3_shader::~q3_shader() 
 {
 
@@ -731,3 +828,61 @@ int q3_shader::run_shader(bool* isLMRun, int lm_index)
 void q3_shader::end_shader()
 {
 }
+/*
+   GLuint CreateShader(GLenum eShaderType, const std::string &strShaderFile)
+   {
+   GLuint shader = glCreateShader(eShaderType);
+   const char *strFileData = strShaderFile.c_str();
+   glShaderSource(shader, 1, &strFileData, NULL);
+
+   glCompileShader(shader);
+
+   GLint status;
+   glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+   if (status == GL_FALSE)
+   {
+   GLint infoLogLength;
+   glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+   GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+   glGetShaderInfoLog(shader, infoLogLength, NULL, strInfoLog);
+
+   const char *strShaderType = NULL;
+   switch(eShaderType)
+   {
+   case GL_VERTEX_SHADER: strShaderType = "vertex"; break;
+   case GL_GEOMETRY_SHADER: strShaderType = "geometry"; break;
+   case GL_FRAGMENT_SHADER: strShaderType = "fragment"; break;
+   }
+
+   fprintf(stderr, "Compile failure in %s shader:\n%s\n", strShaderType, strInfoLog);
+   delete[] strInfoLog;
+   }
+
+   return shader;
+   }
+
+   GLuint CreateProgram(const std::vector<GLuint> &shaderList)
+   {
+   GLuint program = glCreateProgram();
+
+   for(size_t iLoop = 0; iLoop < shaderList.size(); iLoop++)
+   glAttachShader(program, shaderList[iLoop]);
+
+   glLinkProgram(program);
+
+   GLint status;
+   glGetProgramiv (program, GL_LINK_STATUS, &status);
+   if (status == GL_FALSE)
+   {
+   GLint infoLogLength;
+   glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+   GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+   glGetProgramInfoLog(program, infoLogLength, NULL, strInfoLog);
+   fprintf(stderr, "Linker failure: %s\n", strInfoLog);
+   delete[] strInfoLog;
+   }
+
+   return program;
+   }*/
