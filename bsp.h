@@ -147,7 +147,7 @@ public:
 
 
 struct bsp_meshvert {
-  int offset;
+  unsigned int offset;
 };
 
 struct bsp_effect {
@@ -192,12 +192,27 @@ struct bsp_visdata {
 
 struct q3_shader_stage {
   GLuint texture;
+  bool translucent;
   std::string map;
   int blendfunc[2];
   int alphafunc;
   bool depthwrite;
   float scale[2];
   float scroll[2];
+
+  q3_shader_stage() 
+  {
+    texture = NULL;
+    translucent = false;
+    blendfunc[0] = -1;
+    blendfunc[1] = -1;
+    alphafunc = NULL;
+    scale[0] = 1.0f;
+    scale[1] = 1.0f;
+    scroll[0] = 0.0f;
+    scroll[1] = 0.0f;
+    depthwrite = false;
+  };
 };
 
 class q3_shader {
@@ -205,12 +220,13 @@ public:
   q3_shader(void);
   ~q3_shader(void);
 
+  void compile();
+
   std::vector<q3_shader_stage*> stages;
-  int run_shader(bool* isLMRun, int lm_index);
-  void end_shader();
 
-  int m_current_stage;
-
+  bool translucent;
+  GLuint shader;
+  std::string name;
 };
 
 class bsp
@@ -233,15 +249,17 @@ public:
   std::map<std::string, q3_shader*> m_shaders;
   
   void load_lightmaps();
-  void prepare_shader(const q3_shader& shader, const bsp_vertex& vertex, int lmindex);
+  void prepare_shader(const q3_shader& shader, int offset, int lmindex);
   void end_shader(const q3_shader& shader);
 
   std::bitset<10000> m_already_visible;
   std::map<bsp_face*, std::vector<bezier*> > m_patches;
   std::vector<bsp_face*> m_opaque_faces;
-  std::vector<int> m_translucent_faces;
+  std::vector<bsp_face*> m_translucent_faces;
 
   GLuint* lightmaps_;
+  GLuint vboId;
+  GLuint iboId;
 
   // some status variables for outputting info
   int m_num_cluster_not_visible;
@@ -268,7 +286,7 @@ public:
   bsp_header m_header;
   bsp_entities* m_entities;
   bsp_texture* m_textures;
-  vec4f* m_planes;
+  bsp_plane* m_planes;
   bsp_node* m_nodes;
   bsp_leaf* m_leafs;
   bsp_leafface* m_leaffaces;
