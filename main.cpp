@@ -2,13 +2,6 @@
 #include "bsp.h"
 #include "camera.h"
 
-// convert from our coordinate system (looking down X)
-// to OpenGL's coordinate system (looking down -Z)
-GLfloat quake2oglMatrix[16] = {0, 0, -1, 0,
-  -1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 1};
-
 int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -20,10 +13,18 @@ int main(int argc, char **argv)
   IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
 
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
   SDL_WM_SetCaption("Test", "Test2");
   SDL_SetVideoMode(800, 600, 32, SDL_OPENGL);
+
+  GLenum err = glewInit();
+  if (GLEW_OK != err)
+  {
+    fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+  } 
+  fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+  
 
   vec3f vEyePt( -10.0, 10.0, 20.0 );
   camera g_cam(&vEyePt);
@@ -96,6 +97,10 @@ int main(int argc, char **argv)
     // Graphical commands go here
     map->render(g_cam.position_);
     SDL_GL_SwapBuffers();
+
+    unsigned int delta = SDL_GetTicks() - ticks;
+    //if (delta != 0)	
+      //std::cout << "fps: " << 1000 / delta << std::endl;  
 
     //SDL_ShowCursor(SDL_DISABLE);
   }

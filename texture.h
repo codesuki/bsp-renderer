@@ -8,11 +8,11 @@ public:
   virtual ~Texture();
 
   // try to load jpg, if not available tga
-  static int LoadTexture(std::string filename, GLuint* texture) 
-  {
+  static int LoadTexture(std::string filename, q3_shader_stage* shader) 
+  {                                             
     if (filename.length() == 0) return -1;
 
-    std::cout << "loading texture: " << filename << std::endl;
+    //std::cout << "loading texture: " << filename << std::endl;
 
     if (filename.find('.') != std::string::npos)
         filename.erase(filename.end()-4, filename.end());
@@ -40,12 +40,17 @@ public:
     GLenum texture_format;
     GLint num_colors = image->format->BytesPerPixel;
 
+    shader->translucent = false;
+    
     if (num_colors == 4) // contains an alpha channel
     {
       if (image->format->Rmask == 0x000000ff)
         texture_format = GL_RGBA;
       else
         texture_format = GL_BGRA;
+
+      std::cout << "translucent" << filename << std::endl;
+      shader->translucent = true;
     } 
     else if (num_colors == 3) // no alpha channel
     {
@@ -56,10 +61,10 @@ public:
     }
     
     // Have OpenGL generate a texture object handle for us
-    glGenTextures(1, texture);
+    glGenTextures(1, &(shader->texture));
 
     // Bind the texture object
-    glBindTexture(GL_TEXTURE_2D, *texture);
+    glBindTexture(GL_TEXTURE_2D, shader->texture);
  
     // Set the texture's stretching properties
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
