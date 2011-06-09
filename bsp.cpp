@@ -276,7 +276,7 @@ bsp::bsp(std::string filename)
 
   for (it = m_shaders.begin(); it != m_shaders.end(); ++it)
   {
-    std::cout << "processing: " << it->first << std::endl;
+    //std::cout << "processing: " << it->first << std::endl;
     it->second->compile();
   }
 
@@ -758,16 +758,16 @@ void bsp::render(const vec3f& camera_position)
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
 
-  int current_texture = -1;
+  int src = -1;
   int current_lightmap = -2;
 
   std::map<std::string, q3_shader*>::iterator it;
 
   for (int i = 0; i < m_opaque_faces.size(); ++i) 
   {
-    // if (current_texture != m_opaque_faces[i]->texture) 
+    // if (src != m_opaque_faces[i]->texture) 
     // {
-    //   current_texture = m_opaque_faces[i]->texture;
+    //   src = m_opaque_faces[i]->texture;
     //   it = m_shaders.find(m_textures[(m_opaque_faces[i]->texture)].name);	
     // } 
     // else 
@@ -793,8 +793,8 @@ void bsp::end_shader(const q3_shader& shader)
 {
   for (int i = 0; i < shader.stages.size(); ++i)
   {
-    glActiveTextureARB(GL_TEXTURE0_ARB+i);
-    glClientActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glActiveTexture(GL_TEXTURE0+i);
+    glClientActiveTexture(GL_TEXTURE0+i);
     glBindTexture(GL_TEXTURE_2D, 0); 
     glDisable(GL_TEXTURE_2D);  
     glDisable(GL_ALPHA_TEST);
@@ -808,8 +808,8 @@ void bsp::prepare_shader(const q3_shader& shader, int offset, int lm_index)
 
   for (int i = 0; i < shader.stages.size(); ++i)
   {
-    glActiveTextureARB(GL_TEXTURE0_ARB+i);
-    glClientActiveTextureARB(GL_TEXTURE0_ARB+i);
+    glActiveTexture(GL_TEXTURE0+i);
+    glClientActiveTexture(GL_TEXTURE0+i);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnable(GL_TEXTURE_2D);
 
@@ -829,7 +829,7 @@ void bsp::prepare_shader(const q3_shader& shader, int offset, int lm_index)
         glAlphaFunc(stage.alphafunc, 128);
       }
     }
-
+  
     if (stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ZERO)
     {  
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -852,7 +852,7 @@ void bsp::prepare_shader(const q3_shader& shader, int offset, int lm_index)
       //std::cout << stage.map << ":" << (stage.blendfunc[0]) << " and " << (stage.blendfunc[1]) << std::endl;
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     }
-
+    
     if (stage.map.compare("$lightmap") == 0)
     {
       glBindTexture(GL_TEXTURE_2D, lightmaps_[lm_index]);
@@ -902,7 +902,7 @@ void bsp::render_face(bsp_face* face)
   //  std::cout << m_textures[current_face.texture].name << std::endl;
   //}
 
-  if (face->type == POLYGON /*|| face->type == MESH*/) 
+  if (face->type == POLYGON || face->type == MESH) 
   {
     if (offset >= m_num_vertexes) return;
 
@@ -936,30 +936,34 @@ void bsp::render_face(bsp_face* face)
     end_shader(*(it->second));
   } 
   else if (face->type == PATCH) 
-  { /* 
-       std::vector<bezier*> patches = m_patches[face];
+  {  
+    /*
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    std::vector<bezier*> patches = m_patches[face];
 
-       std::map<std::string, q3_shader*>::iterator it;
-       it = m_shaders.find(m_textures[current_face.texture].name);
+    std::map<std::string, q3_shader*>::iterator it;
+    it = m_shaders.find(m_textures[current_face.texture].name);
 
-       for (int i = 0; i < patches.size(); ++i) 
-       {
-       const bezier* b = patches[i];
-       const bsp_vertex* vertexes = b->m_vertexes;
-       const unsigned int* indexes = b->m_indexes;
+    for (int i = 0; i < patches.size(); ++i) 
+    {
+      const bezier* b = patches[i];
+      const bsp_vertex* vertexes = b->m_vertexes;
+      const unsigned int* indexes = b->m_indexes;
 
-       glColorPointer(4, GL_BYTE, stride, &(vertexes[0].color));
-       glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].position);
+      glColorPointer(4, GL_BYTE, stride, &(vertexes[0].color));
+      glVertexPointer(3, GL_FLOAT, sizeof(bsp_vertex), vertexes[0].position);
 
-       prepare_shader(*(it->second), vertexes[0], current_face.lm_index);
+      prepare_shader(*(it->second), 0, current_face.lm_index);
 
-       for (int j = 0; j < 10; j++) 
-       {
-       glDrawElements(GL_TRIANGLE_STRIP, 11*2, GL_UNSIGNED_INT, &(indexes[11*j*2]));
-       }
+    glUseProgram(it->second->shader);
+      for (int j = 0; j < 10; j++) 
+      {
+        glDrawElements(GL_TRIANGLE_STRIP, 11*2, GL_UNSIGNED_INT, &(indexes[11*j*2]));
+      }
 
-       end_shader(*(it->second));
-       } */ 
+    glUseProgram(0);
+      end_shader(*(it->second));
+    } */
   } //else if (m_faces[face].type == BILLBOARD) {
 }
 
@@ -975,42 +979,43 @@ q3_shader::~q3_shader()
 void q3_shader::compile()
 { 
   std::stringstream vertex_shader;
-  vertex_shader << "void main() {\n gl_FrontColor = gl_Color;\n gl_Position = ftransform();\n";
+  vertex_shader << "void main() {\n\tgl_FrontColor = gl_Color;\n\tgl_Position = ftransform();\n";
   
   std::stringstream fragment_shader;
   
   for (int i = 0; i < stages.size(); ++i)
   {
-    vertex_shader << "gl_TexCoord[" << i << "] = gl_MultiTexCoord" << i << ";\n";
-    fragment_shader << "uniform sampler2D texture" << i << ";\n";
+    vertex_shader << "\tgl_TexCoord[" << i << "] = gl_MultiTexCoord" << i << ";\n";
+    fragment_shader << "uniform sampler2D texture" << i << "; //" << stages[i]->map << "\n";
   }
 
   fragment_shader << "void main() {\n";
   
   for (int i = 0; i < stages.size(); ++i)
   {
-    fragment_shader << "vec4 color" << i << " = texture2D(texture" << i << ", gl_TexCoord[" << i << "].st);\n";
+    fragment_shader << "\tvec4 color" << i << " = texture2D(texture" << i << ", gl_TexCoord[" << i << "].st);\n";
   } 
   
+  std::string dst;
+  std::string src;
+
   for (int i = 0; i < stages.size(); ++i)
   {
     const q3_shader_stage& stage = *(stages[i]);
 
-    std::string last_texture;
-
     std::stringstream helper;
     helper << "color" << i;
-    std::string current_texture = helper.str();
+    src = helper.str();
 
     if (i == 0) 
     {
-      last_texture = "gl_FragColor";
+      dst = "gl_FragColor";
     }
     else
     {
       std::stringstream helper;
       helper << "color" << i-1;
-      last_texture = helper.str();
+      dst = helper.str();
     }
 
     if (stage.alphafunc != 0)
@@ -1025,40 +1030,75 @@ void q3_shader::compile()
       }
     }
 
-    if (stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ZERO)
-    { 
-      // replace 
-      fragment_shader << current_texture << " = " << current_texture << ";\n";
-    }
-    else if (stage.blendfunc[0] == GL_DST_COLOR && stage.blendfunc[1] == GL_ZERO)
+    fragment_shader << "\t" << src << " = (" << src << " * ";
+
+    switch (stage.blendfunc[0])
     {
-      // modulate
-      fragment_shader << current_texture << " = vec4(" << current_texture << ".rgb * " << last_texture << ".rgb, " << current_texture << ".a * " << last_texture << ".a);\n"; 
-    }
-    else if (stage.blendfunc[0] == GL_SRC_ALPHA &&
-        stage.blendfunc[1] == GL_ONE_MINUS_SRC_ALPHA)
-    {
-      // decal
-      fragment_shader << current_texture << " = vec4(" << last_texture << ".rgb * (1-" << current_texture << ".a) + " << current_texture << ".rgb * " << current_texture << ".a, " << last_texture << ".a);\n"; 
-    }
-    else if (stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
-    {
-      // add
-      fragment_shader << current_texture << " = "  << last_texture << " + " << current_texture << ";\n"; 
-    }
-    else if (stage.blendfunc[0] == GL_DST_COLOR && stage.blendfunc[1] == GL_SRC_ALPHA)
-    {
-      fragment_shader << current_texture << " = vec4(" << last_texture << ".rgb, " << current_texture << ".a);\n"; 
-    }
-    else
-    {
-      // replace 
-      fragment_shader << current_texture << " = " << current_texture << ";\n"; 
+      case GL_ONE:
+        fragment_shader << "1";
+        break;
+      case GL_ZERO:
+        fragment_shader << "0";
+        break;
+      case GL_DST_COLOR:
+        fragment_shader << dst;
+        break;
+      case GL_SRC_COLOR:
+        fragment_shader << src;
+        break;
+      case GL_DST_ALPHA:
+        fragment_shader << dst << ".a";
+        break;
+      case GL_SRC_ALPHA:
+        fragment_shader << src << ".a";
+        break;
+      case GL_ONE_MINUS_SRC_ALPHA:
+        fragment_shader << "(1 - " << src << ".a)";
+        break;
+      case GL_ONE_MINUS_DST_ALPHA:
+        fragment_shader << "(1 - " << dst << ".a)";
+        break;
+      default:
+        std::cout << stage.map << std::endl;
     }
 
-    fragment_shader << "gl_FragColor = " << current_texture << ";\n";
+    fragment_shader << ") + (" << dst << " * "; 
+
+    switch (stage.blendfunc[0])
+    {
+      case GL_ONE:
+        fragment_shader << "1";
+        break;
+      case GL_ZERO:
+        fragment_shader << "0";
+        break;
+      case GL_DST_COLOR:
+        fragment_shader << dst;
+        break;
+      case GL_SRC_COLOR:
+        fragment_shader << src;
+        break;
+      case GL_DST_ALPHA:
+        fragment_shader << dst << ".a";
+        break;
+      case GL_SRC_ALPHA:
+        fragment_shader << src << ".a";
+        break;
+      case GL_ONE_MINUS_SRC_ALPHA:
+        fragment_shader << "(1 - " << src << ".a)";
+        break;
+      case GL_ONE_MINUS_DST_ALPHA:
+        fragment_shader << "(1 - " << dst << ".a)";
+        break;                  
+      default:
+        std::cout << stage.map << std::endl; 
+    }
+
+    fragment_shader << ");\n";    
   } 
 
+  fragment_shader << "\t" << "gl_FragColor = " << src << ";\n";
+  
   vertex_shader << "}";
   fragment_shader << "}";
 
