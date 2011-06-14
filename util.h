@@ -20,7 +20,8 @@ using namespace vmml;
 
 //#define GL_GLEXT_PROTOTYPES
 
-#define __USE_VBO__   
+#define __USE_VBO__
+#define __USE_SHADERS__
 
 #include "glew.h"
 
@@ -35,6 +36,14 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList);
 #define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=NULL; } }
 #define PRINT_VAR(x) std::cout << #x << " " << x << std::endl
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
+#define glError() { \
+	GLenum err = glGetError(); \
+	while (err != GL_NO_ERROR) { \
+		fprintf(stderr, "glError: %s caught at %s:%u\n", (char *)gluErrorString(err), __FILE__, __LINE__); \
+		err = glGetError(); \
+	} \
+}
 
 // convert from our coordinate system (looking down X)
 // to OpenGL's coordinate system (looking down -Z)     

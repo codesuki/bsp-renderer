@@ -34,6 +34,14 @@ int main(int argc, char **argv)
   bsp *map = new bsp("maps/q3dm6.bsp");
   unsigned int ticks = 0;   
 
+  glEnable(GL_DEPTH_TEST); 
+  glDisable(GL_LIGHTING);
+
+#ifndef __USE_SHADERS__
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+#endif
+
   while (true)
   {
     g_cam.updateTime(SDL_GetTicks() - ticks);
@@ -99,8 +107,8 @@ int main(int argc, char **argv)
     SDL_GL_SwapBuffers();
 
     unsigned int delta = SDL_GetTicks() - ticks;
-    //if (delta != 0)	
-      //std::cout << "fps: " << 1000 / delta << std::endl;  
+    if (delta != 0)	
+      std::cout << "fps: " << 1000 / delta << std::endl;  
 
     //SDL_ShowCursor(SDL_DISABLE);
   }
