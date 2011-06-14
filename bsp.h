@@ -227,6 +227,11 @@ public:
   bool translucent;
   GLuint shader;
   std::string name;
+
+  int texture_idx[8];
+  int position_idx;
+  int tex_coord_idx;
+  int lm_coord_idx;
 };
 
 class bsp
@@ -249,7 +254,7 @@ public:
   std::map<std::string, q3_shader*> m_shaders;
   
   void load_lightmaps();
-  void prepare_shader(const q3_shader& shader, int offset, int lmindex);
+  void prepare_shader(q3_shader& shader, int offset, int lmindex);
   void end_shader(const q3_shader& shader);
 
   std::bitset<10000> m_already_visible;
@@ -265,6 +270,7 @@ public:
   int m_num_cluster_not_visible;
   int m_num_not_in_frustum;
   int m_num_skipped_faces;
+  int m_num_skipped_shaders;
 
   int m_num_entities;
   int m_num_textures;
