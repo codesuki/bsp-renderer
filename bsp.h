@@ -232,6 +232,7 @@ public:
   int position_idx;
   int tex_coord_idx;
   int lm_coord_idx;
+  int color_idx;
 };
 
 class bsp
