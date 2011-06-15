@@ -14,8 +14,11 @@ public:
   bsp_vertex* m_vertexes;
   bsp_vertex m_control_vertexes[9];
   unsigned int* m_indexes;
-  unsigned int* m_row_indexes;
-  unsigned int* m_tri_per_row;
+  unsigned int* m_row_indexes[10];
+  unsigned int m_tri_per_row[10];
+
+  unsigned int m_vertex_offset;
+  unsigned int m_index_offset;
 };
 
 #endif /* _BEZIER_H_ */

@@ -24,14 +24,14 @@ int main(int argc, char **argv)
     fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
   } 
   fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
-  
+
 
   vec3f vEyePt( -10.0, 10.0, 20.0 );
   camera g_cam(&vEyePt);
 
   SDL_WarpMouse(400, 300);
 
-  bsp *map = new bsp("maps/q3dm6.bsp");
+  bsp *map = new bsp(argv[1]);
   unsigned int ticks = 0;   
 
   glEnable(GL_DEPTH_TEST); 
@@ -41,6 +41,12 @@ int main(int argc, char **argv)
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 #endif
+
+  glViewport(0, 0, 800, 600);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(90, (float)800/600, 1, 10000);
+  glMatrixMode(GL_MODELVIEW);
 
   while (true)
   {
@@ -87,15 +93,10 @@ int main(int argc, char **argv)
       g_cam.pitch(-ry);
       g_cam.yaw(-rx);
     }
-    glViewport(0, 0, 800, 600);
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(90, (float)800/600, 1, 10000);
 
-    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); // Reset orientation               x
 
     glMultMatrixf(g_cam.GetMatrix());
