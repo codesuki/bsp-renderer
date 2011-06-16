@@ -32,7 +32,6 @@ int main(int argc, char **argv)
   SDL_WarpMouse(400, 300);
 
   bsp *map = new bsp(argv[1]);
-  unsigned int ticks = 0;   
 
   glEnable(GL_DEPTH_TEST); 
   glDisable(GL_LIGHTING);
@@ -48,11 +47,17 @@ int main(int argc, char **argv)
   gluPerspective(90, (float)800/600, 1, 10000);
   glMatrixMode(GL_MODELVIEW);
 
+  unsigned int ticks = 0;   
+  unsigned int delta = 0;
+  
   while (true)
   {
-    g_cam.updateTime(SDL_GetTicks() - ticks);
-    ticks = SDL_GetTicks(); 
+    delta = SDL_GetTicks() - ticks;
 
+    g_cam.updateTime(delta);
+    
+    ticks = SDL_GetTicks(); 
+    
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) 
@@ -96,18 +101,16 @@ int main(int argc, char **argv)
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
 
-
-    glLoadIdentity(); // Reset orientation               x
+    glLoadIdentity(); // Reset orientation               
 
     glMultMatrixf(g_cam.GetMatrix());
     glMultMatrixf(quake2oglMatrix);
-    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Graphical commands go here
-    map->render(g_cam.position_);
+    map->render(g_cam.position_, (unsigned int)(ticks/200));
     SDL_GL_SwapBuffers();
 
-    unsigned int delta = SDL_GetTicks() - ticks;
     if (delta != 0)	
       std::cout << "fps: " << 1000 / delta << std::endl;  
 

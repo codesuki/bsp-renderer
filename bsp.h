@@ -190,28 +190,57 @@ struct bsp_visdata {
   unsigned char* vecs; // [num_vecs*size_vecs]
 };
 
+enum wave_funcs 
+{
+  WAVEFUNC_NONE = 0,
+  WAVEFUNC_SIN,
+  WAVEFUNC_TRIANGLE,
+  WAVEFUNC_SQUARE,
+  WAVEFUNC_SAWTOOTH,
+  WAVEFUNC_INVERSESAWTOOTH
+};
+
+enum rgb_gen
+{
+  RGBGEN_WAVE,
+  RGBGEN_IDENTITY,
+  RGBGEN_VERTEX,
+  RGBGEN_EXACTVERTEX
+};
+
 struct q3_shader_stage {
   GLuint texture;
   bool translucent;
+  bool animated;
   std::string map;
   int blendfunc[2];
   int alphafunc;
   bool depthwrite;
   float scale[2];
   float scroll[2];
+  int wavefunc;
+  float base;
+  float amplitude;
+  float phase;
+  float frequency;
+  int rgbgen;
 
   q3_shader_stage() 
   {
     texture = NULL;
     translucent = false;
+    animated = false;
     blendfunc[0] = -1;
     blendfunc[1] = -1;
     alphafunc = NULL;
+    depthwrite = false;
     scale[0] = 1.0f;
     scale[1] = 1.0f;
     scroll[0] = 0.0f;
     scroll[1] = 0.0f;
-    depthwrite = false;
+    wavefunc = -1;
+    base = amplitude = phase = frequency = 0.0f;
+    rgbgen = RGBGEN_IDENTITY;
   };
 };
 
@@ -233,6 +262,7 @@ public:
   int tex_coord_idx;
   int lm_coord_idx;
   int color_idx;
+  int time_idx;
 };
 
 class bsp
@@ -246,7 +276,7 @@ public:
   int find_leaf(const vec3f& camera_position);
   void get_visible_faces(const vec3f& camera_position);
 
-  void render(const vec3f& camera_position);
+  void render(const vec3f& camera_position, unsigned int time);
   bool is_cluster_visible(int cluster, int test_cluster);
   void render_face(bsp_face* face);
 
@@ -266,6 +296,8 @@ public:
   GLuint* lightmaps_;
   GLuint vboId;
   GLuint iboId;
+
+  unsigned int m_time;
 
   // some status variables for outputting info
   int m_num_cluster_not_visible;

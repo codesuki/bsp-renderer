@@ -211,6 +211,7 @@ bsp::bsp(std::string filename)
 
       q3_shader* shader = new q3_shader();
       shader->translucent = false;
+      shader->name = m_textures[i].name;
 
       q3_shader_stage* stage = new q3_shader_stage;
       stage->blendfunc[0] = GL_ONE;
@@ -230,7 +231,7 @@ bsp::bsp(std::string filename)
       stage->map = "$lightmap";
       stage->blendfunc[0] = GL_DST_COLOR;
       stage->blendfunc[1] = GL_ZERO;
-      shader->stages.push_back(stage);		
+      shader->stages.push_back(stage);		 
 
       m_shaders.insert(std::pair<std::string, q3_shader*>(m_textures[i].name, shader));
 
@@ -280,22 +281,42 @@ bsp::bsp(std::string filename)
     }
   }
   //std::cout << "finished checking shaders" << std::endl;         
-
+  
+  // remove lightmap stage for faces without lightmap.
+  for (int i = 0; i < m_num_faces; ++i)
+  {
+    if (m_faces[i].lm_index >= 0)
+    {
+      continue;
+    }
+    std::map<std::string, q3_shader*>::iterator it;
+    it = m_shaders.find(m_textures[m_faces[i].texture].name);
+    q3_shader& shader = *(it->second);
+    for (int j = 0; j < shader.stages.size(); ++j)
+    {
+      if (shader.stages[j]->map.compare("$lightmap") == 0)
+      {
+        shader.stages.pop_back();
+        std::cout << "removed lightmap from shader: " << m_textures[m_faces[i].texture].name << std::endl;
+      }
+    }
+  } 
+    
   load_lightmaps();
 
   //std::cout << "finished loading lightmaps" << std::endl;
 #ifdef __USE_SHADERS__
   {
-  std::map<std::string, q3_shader*>::iterator it;
-  
-  for (int i = 0; i < m_num_textures; ++i) 
-  {
     std::map<std::string, q3_shader*>::iterator it;
-    it = m_shaders.find(m_textures[i].name);
-   
-    std::cout << "processing: " << it->first << std::endl;
-    it->second->compile();
-  }
+
+    for (int i = 0; i < m_num_textures; ++i) 
+    {
+      std::map<std::string, q3_shader*>::iterator it;
+      it = m_shaders.find(m_textures[i].name);
+
+      std::cout << "processing: " << it->first << std::endl;
+      it->second->compile();
+    }
   }
 #endif
 
@@ -304,7 +325,7 @@ bsp::bsp(std::string filename)
   // all vertexes + all tesselated beziers
   int num_bezier_vertexes = 0;
   int num_bezier_indexes = 0;
-   
+
   std::map<bsp_face*, std::vector<bezier*> >::iterator it;  
 
   for (it = m_patches.begin(); it != m_patches.end(); ++it)
@@ -339,7 +360,7 @@ bsp::bsp(std::string filename)
       GL_STATIC_DRAW); 
 
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, m_header.direntries[LUMP_MESHVERTS].length, m_meshverts); 
-  
+
   int offset_verts = 0;
   int offset_idx = 0;
   for (it = m_patches.begin(); it != m_patches.end(); ++it)
@@ -350,7 +371,7 @@ bsp::bsp(std::string filename)
           m_header.direntries[LUMP_VERTEXES].length + offset_verts, 
           11*11*sizeof(bsp_vertex), 
           it->second[j]->m_vertexes);
-      
+
       glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 
           m_header.direntries[LUMP_MESHVERTS].length + offset_idx,
           10*11*2*sizeof(unsigned int), 
@@ -358,7 +379,7 @@ bsp::bsp(std::string filename)
 
       it->second[j]->m_vertex_offset = m_header.direntries[LUMP_VERTEXES].length + offset_verts;
       it->second[j]->m_index_offset = m_header.direntries[LUMP_MESHVERTS].length + offset_idx;
-      
+
       offset_verts += sizeof(bsp_vertex)*11*11;
       offset_idx += sizeof(unsigned int)*10*11*2;    
     }
@@ -481,7 +502,33 @@ int get_token_end_pos(const std::string* buffer, int offset)
   }
 }
 
-int get_blend_func(std::string name) {
+int get_wave_func(std::string name)
+{
+  if (strcasecmp("sin", name.c_str()) == 0)
+  {
+    return WAVEFUNC_SIN;
+  }
+  else if (strcasecmp("triangle", name.c_str()) == 0)
+  {
+    return WAVEFUNC_TRIANGLE;
+  }       
+  else if (strcasecmp("square", name.c_str()) == 0)
+  {
+    return WAVEFUNC_SQUARE;
+  } 
+  else if (strcasecmp("sawtooth", name.c_str()) == 0)
+  {
+    return WAVEFUNC_SAWTOOTH;
+  } 
+  else if (strcasecmp("inversesawtooth", name.c_str()) == 0)
+  {
+    return WAVEFUNC_INVERSESAWTOOTH;
+  }
+  return -1;
+}
+
+int get_blend_func(std::string name) 
+{
   if (strcasecmp("GL_SRC_ALPHA", name.c_str()) == 0) 
   {
     return GL_SRC_ALPHA;
@@ -518,10 +565,9 @@ int get_blend_func(std::string name) {
   {
     return GL_SRC_COLOR;
   }
-  else 
-  {
-    std::cout << "ERROR: " << name << std::endl;
-  }
+    
+  std::cout << "ERROR: " << name << std::endl;
+  return -1;
 }
 
 std::string blend_func_to_string(int blendfunc)
@@ -556,7 +602,7 @@ std::string blend_func_to_string(int blendfunc)
       return std::string("GL_SRC_COLOR");
       break;
     default:
-      return std::string("anders");
+      return std::string("error");
   }
 }
 
@@ -641,6 +687,49 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                    token = shaders->substr(i, end_pos-i);
                    i = ++end_pos;
                    stage->alphafunc = get_alpha_func(token);
+                 } 
+                 else if (strcasecmp("rgbGen", token.c_str()) == 0) 
+                 {
+                   end_pos = get_token_end_pos(shaders, i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = ++end_pos;
+                   if (strcasecmp("identity", token.c_str()) == 0)
+                   {
+                     stage->rgbgen = RGBGEN_IDENTITY;
+                   }
+                   else if (strcasecmp("vertex", token.c_str()) == 0)
+                   {
+                     stage->rgbgen = RGBGEN_VERTEX;
+                   }
+                   else if (strcasecmp("wave", token.c_str()) == 0) 
+                   {
+                     stage->rgbgen = RGBGEN_WAVE;
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->wavefunc = get_wave_func(token); 
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->base = atof(token.c_str());
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->amplitude = atof(token.c_str());
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->phase = atof(token.c_str()); 
+                                                    
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->frequency = atof(token.c_str()); 
+                   } 
                  } 
                  else if (strcasecmp("tcmod", token.c_str()) == 0) 
                  {
@@ -811,7 +900,7 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
   return false;
 }
 
-void bsp::render(const vec3f& camera_position)
+void bsp::render(const vec3f& camera_position, unsigned int time)
 {
   get_visible_faces(camera_position);
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
@@ -823,6 +912,8 @@ void bsp::render(const vec3f& camera_position)
   {
     render_face(m_opaque_faces[i]);
   }
+
+  m_time = time;
 }
 
 
@@ -1040,9 +1131,11 @@ void bsp::render_face(bsp_face* face)
   {
     glUseProgram(shader.shader);
     current_shader = shader.shader;
-  }      
+  }  
+  
+  glUniform1f(shader.time_idx, m_time);    
 #endif
-   
+
   if (face->type == POLYGON || face->type == MESH) 
   {  
     if (offset >= m_num_vertexes) return;
@@ -1060,9 +1153,9 @@ void bsp::render_face(bsp_face* face)
     glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(vec3f)+sizeof(vec2f)));
 
-   /* glEnableVertexAttribArray(shader.color_idx);
+    glEnableVertexAttribArray(shader.color_idx);
     glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
-        BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));  */ 
+        BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));    
 #else
     glVertexPointer(3, GL_FLOAT, stride, 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
@@ -1083,7 +1176,7 @@ void bsp::render_face(bsp_face* face)
         &(m_meshverts[current_face.meshvert])); 
 #endif   
   } 
-  else if (face->type == PATCH) 
+  else if (face->type == PATCH)       
   { 
    /* 
     std::vector<bezier*> patches = m_patches[face];
@@ -1126,10 +1219,10 @@ void bsp::render_face(bsp_face* face)
       glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset+sizeof(vec3f)+sizeof(vec2f)));
 
-      /*glEnableVertexAttribArray(shader.color_idx);
+      glEnableVertexAttribArray(shader.color_idx);
       glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
-        BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));  */
-     
+        BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
+
       prepare_shader(shader, 0, current_face.lm_index);
 
       for (int j = 0; j < 10; j++) 
@@ -1138,8 +1231,8 @@ void bsp::render_face(bsp_face* face)
             11*2,
             GL_UNSIGNED_INT, 
             BUFFER_OFFSET(b->m_index_offset+sizeof(unsigned int)*j*11*2));
-      }
-    } 
+      } 
+    }  
   } //else if (m_faces[face].type == BILLBOARD) {
 }
 
@@ -1157,32 +1250,83 @@ void q3_shader::compile()
   if (stages.size() == 0)
     return;
 
-  std::cout << "mh" << std::endl;
-
   std::stringstream vertex_shader;
-  vertex_shader << "attribute vec4 inPosition;\n" 
-    << "attribute vec2 inTexCoord;\n"
-    << "attribute vec2 inLmCoord;\n"
-    << "attribute vec3 inColor;\n"
-    << "varying vec2 outTexCoord;\n"
-    << "varying vec2 outLmCoord;\n";
+  vertex_shader << "#version 130\n" 
+    << "uniform float inTime;\n" 
+    << "in vec4 inPosition;\n" 
+    << "in vec2 inTexCoord;\n"
+    << "in vec2 inLmCoord;\n"
+    << "in vec4 inColor;\n"
+    << "out vec2 outLmCoord;\n"
+    << "out vec4 outColor;\n";
+
+  for (int i = 0; i < stages.size(); ++i)
+  {
+    if (!stages[i]->map.compare("$lightmap")) 
+      continue; 
+    vertex_shader << "out vec2 outTexCoord" << i << ";\n";
+  }
 
   vertex_shader << "void main() {\n"
-    << "\toutTexCoord = inTexCoord;\n"
     << "\toutLmCoord = inLmCoord;\n"
-    //<< "\tgl_FrontColor = inColor;\n"
+    << "\toutColor = inColor;\n"
     << "\tgl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * inPosition;\n";
+
+  for (int i = 0; i < stages.size(); ++i)
+  {
+    if (!stages[i]->map.compare("$lightmap")) 
+      continue; 
   
-  std::stringstream fragment_shader;
+    vertex_shader << "\toutTexCoord" << i << " = inTexCoord;\n";
+  }  
   
   for (int i = 0; i < stages.size(); ++i)
   {
-    //vertex_shader << "\tgl_TexCoord[" << i << "] = gl_MultiTexCoord" << i << ";\n";
+    if (!stages[i]->map.compare("$lightmap")) 
+      continue; 
+    
+    if (stages[i]->scale[0] != 1.0f || stages[i]->scale[1] != 1.0f)
+    {   
+      vertex_shader << "\toutTexCoord" << i << ".s *= " << stages[i]->scale[0] << ";\n";
+      vertex_shader << "\toutTexCoord" << i << ".t *= " << stages[i]->scale[1] << ";\n";
+    }
+
+    if (stages[i]->scroll[0] != 0.0f || stages[i]->scroll[1] != 0.0f)
+    {
+      vertex_shader << "\toutTexCoord" << i 
+        << ".s += inTime * " << stages[i]->scroll[0] 
+        << " - floor(inTime * " << stages[i]->scroll[0] << ")" 
+        << ";\n";
+      vertex_shader << "\toutTexCoord" << i
+        << ".t += inTime * " << stages[i]->scroll[1]
+        << " - floor(inTime * " << stages[i]->scroll[1] << ")" 
+        << ";\n";
+    }
+  }
+
+  
+  std::stringstream fragment_shader;
+
+  fragment_shader << "#version 130\n"; 
+  
+  for (int i = 0; i < stages.size(); ++i)
+  {
     fragment_shader << "uniform sampler2D texture" << i << "; //" << stages[i]->map << "\n";
   }
 
-  fragment_shader << "varying vec2 outTexCoord;\n"
-    << "varying vec2 outLmCoord;\n";
+  fragment_shader << "uniform float inTime;\n";
+  fragment_shader << "in vec4 outColor;\n";
+  fragment_shader << "in vec2 outLmCoord;\n";
+    
+  for (int i = 0; i < stages.size(); ++i)
+  {
+    if (!stages[i]->map.compare("$lightmap")) 
+      continue;
+
+    fragment_shader << "in vec2 outTexCoord" << i << ";\n";
+  }
+
+  fragment_shader << "out vec4 fragColor;\n";
 
   fragment_shader << "void main() {\n";
 
@@ -1196,7 +1340,7 @@ void q3_shader::compile()
     else
     {   
       fragment_shader << "\tvec4 color" << i 
-        << " = texture2D(texture" << i << ", outTexCoord.st);\n";
+        << " = texture2D(texture" << i << ", outTexCoord" << i << ".st);\n";
     }
   }
 
@@ -1222,7 +1366,7 @@ void q3_shader::compile()
       dst = helper.str();
     }  
     
-    // 0.50 equals 128 when normalized to 0-1 range
+    // 0.5 equals 128 when normalized to 0-1 range
     if (stage.alphafunc != 0)
     {
       if (stage.alphafunc == GL_GREATER)
@@ -1231,11 +1375,11 @@ void q3_shader::compile()
       }
       else if (stage.alphafunc == GL_LESS)
       {
-        fragment_shader << "if (" << src << ".a > 0.501960785) discard;\n";
+        fragment_shader << "if (" << src << ".a > 0.5) discard;\n";
       }
       else
       {
-        fragment_shader << "if (" << src << ".a <= 0.501960785) discard;\n";
+        fragment_shader << "if (" << src << ".a <= 0.5) discard;\n";
       }
     }
 
@@ -1304,9 +1448,26 @@ void q3_shader::compile()
     }
 
     fragment_shader << ");\n";    
+
+    fragment_shader << "\t" << src << " *= ";
+    switch (stage.rgbgen)
+    {
+      case RGBGEN_IDENTITY:
+        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0)";
+        break;
+      case RGBGEN_VERTEX:
+        fragment_shader << "outColor";
+        break;
+      case RGBGEN_WAVE:
+        fragment_shader << stages[i]->amplitude << " * " << "sin(" << stages[i]->frequency << " * inTime + " << stages[i]->phase << ") + " << stages[i]->base;
+        break;
+      default:
+        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0)";
+    }
+    fragment_shader << ";\n"; 
   }   
 
-  fragment_shader << "\t" << "gl_FragColor = " << src << ";\n";  
+  fragment_shader << "\t" << "fragColor = " << src << ";\n";  
 
   vertex_shader << "}";
   fragment_shader << "}";
@@ -1314,8 +1475,6 @@ void q3_shader::compile()
   std::replace(name.begin(), name.end(), '/', '-');
 
   std::ofstream ofs;
-
-  std::cout << "ASDSAD " << name << std::endl;
 
   std::string fname = "shaders/" + name + ".vert";
   ofs.open(fname.c_str());
@@ -1331,7 +1490,9 @@ void q3_shader::compile()
   shaders.push_back(CreateShader(GL_VERTEX_SHADER, vertex_shader.str()));
   shaders.push_back(CreateShader(GL_FRAGMENT_SHADER, fragment_shader.str()));
 
-  shader = CreateProgram(shaders); 
+  shader = CreateProgram(shaders);
+
+  glBindFragDataLocation(shader, 0, "fragColor"); 
 
   texture_idx[0] = glGetUniformLocation(shader, "texture0"); 
   texture_idx[1] = glGetUniformLocation(shader, "texture1"); 
@@ -1342,9 +1503,11 @@ void q3_shader::compile()
   texture_idx[6] = glGetUniformLocation(shader, "texture6"); 
   texture_idx[7] = glGetUniformLocation(shader, "texture7"); 
 
+  time_idx = glGetUniformLocation(shader, "inTime");
+  
   position_idx = glGetAttribLocation(shader, "inPosition");
   tex_coord_idx = glGetAttribLocation(shader, "inTexCoord");
-  lm_coord_idx = glGetAttribLocation(shader, "inLmCoord");   
+  lm_coord_idx = glGetAttribLocation(shader, "inLmCoord");
   color_idx = glGetAttribLocation(shader, "inColor");
 
   glUseProgram(shader);
