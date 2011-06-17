@@ -6,24 +6,24 @@
 class bezier;
 
 enum lump {
-  //Lump Name		Description  
+  //Lump Name           Description  
   LUMP_ENTITIES,      // Game-related object descriptions.  
   LUMP_TEXTURES,      // Surface descriptions.  
   LUMP_PLANES,        // Planes used by map geometry.  
-  LUMP_NODES,	       	// BSP tree nodes.  
-  LUMP_LEAFS,		// BSP tree leaves.  
-  LUMP_LEAFFACES,    	// Lists of face indices, one list per leaf.  
-  LUMP_LEAFBRUSHES,	// Lists of brush indices, one list per leaf.  
-  LUMP_MODELS,       	// Descriptions of rigid world geometry in map.  
-  LUMP_BRUSHES,      	// Convex polyhedra used to describe solid space.  
-  LUMP_BRUSHSIDES,   	// Brush surfaces.  
-  LUMP_VERTEXES,     	// Vertices used to describe faces.  
-  LUMP_MESHVERTS,    	// Lists of offsets, one list per mesh.  
-  LUMP_EFFECTS,      	// List of special map effects.  
-  LUMP_FACES,	       	// Surface geometry.  
-  LUMP_LIGHTMAPS,    	// Packed lightmap data.  
-  LUMP_LIGHTVOLS,    	// Local illumination data.  
-  LUMP_VISDATA       	// Cluster-cluster visibility data.
+  LUMP_NODES,           // BSP tree nodes.  
+  LUMP_LEAFS,           // BSP tree leaves.  
+  LUMP_LEAFFACES,       // Lists of face indices, one list per leaf.  
+  LUMP_LEAFBRUSHES,     // Lists of brush indices, one list per leaf.  
+  LUMP_MODELS,          // Descriptions of rigid world geometry in map.  
+  LUMP_BRUSHES,         // Convex polyhedra used to describe solid space.  
+  LUMP_BRUSHSIDES,      // Brush surfaces.  
+  LUMP_VERTEXES,        // Vertices used to describe faces.  
+  LUMP_MESHVERTS,       // Lists of offsets, one list per mesh.  
+  LUMP_EFFECTS,         // List of special map effects.  
+  LUMP_FACES,           // Surface geometry.  
+  LUMP_LIGHTMAPS,       // Packed lightmap data.  
+  LUMP_LIGHTVOLS,       // Local illumination data.  
+  LUMP_VISDATA          // Cluster-cluster visibility data.
 };
 
 enum faceType {
@@ -132,7 +132,7 @@ public:
   /**
      Used for bezier patch tesselation
   */
-  bsp_vertex operator*(float factor) const	{
+  bsp_vertex operator*(float factor) const      {
     bsp_vertex res;
 
     res.position = position * factor;
@@ -190,9 +190,9 @@ struct bsp_visdata {
   unsigned char* vecs; // [num_vecs*size_vecs]
 };
 
-enum wave_funcs 
+enum wavefunc 
 {
-  WAVEFUNC_NONE = 0,
+  WAVEFUNC_NONE,
   WAVEFUNC_SIN,
   WAVEFUNC_TRIANGLE,
   WAVEFUNC_SQUARE,
@@ -200,7 +200,15 @@ enum wave_funcs
   WAVEFUNC_INVERSESAWTOOTH
 };
 
-enum rgb_gen
+enum alphafunc
+{
+  ALPHAFUNC_NONE,
+  ALPHAFUNC_GREATER,
+  ALPHAFUNC_LESS,
+  ALPHAFUNC_GEQUAL
+};
+
+enum rgbgen_t
 {
   RGBGEN_WAVE,
   RGBGEN_IDENTITY,
@@ -208,39 +216,74 @@ enum rgb_gen
   RGBGEN_EXACTVERTEX
 };
 
+#define MAX_TEXMODS 4
+
+enum tcmod
+{
+  TCMOD_NONE,
+  TCMOD_SCROLL,
+  TCMOD_SCALE,
+  TCMOD_TURB,
+  TCMOD_TRANSFORM,
+  TCMOD_STRETCH,
+  TCMOD_ROTATE
+};
+
+struct waveform
+{ 
+  wavefunc type;
+  float base;
+  float amplitude;
+  float phase;
+  float frequency; 
+};
+ 
+struct texmod
+{
+  tcmod type;
+
+  waveform wave;
+
+  float scale[2];
+  float scroll[2];
+
+  float matrix[2][2];
+  float translate[2];
+
+  float rotate_speed;
+
+  texmod()
+  {
+    type = TCMOD_NONE;
+  };
+};
+
 struct q3_shader_stage {
   GLuint texture;
   bool translucent;
-  bool animated;
   std::string map;
   int blendfunc[2];
   int alphafunc;
   bool depthwrite;
-  float scale[2];
-  float scroll[2];
-  int wavefunc;
-  float base;
-  float amplitude;
-  float phase;
-  float frequency;
-  int rgbgen;
+  bool clamp;
 
+  rgbgen_t rgbgen;
+  waveform rgbwave;
+
+  int num_texmods;
+  texmod texmods[MAX_TEXMODS];
+  
   q3_shader_stage() 
   {
     texture = NULL;
     translucent = false;
-    animated = false;
     blendfunc[0] = -1;
     blendfunc[1] = -1;
     alphafunc = NULL;
     depthwrite = false;
-    scale[0] = 1.0f;
-    scale[1] = 1.0f;
-    scroll[0] = 0.0f;
-    scroll[1] = 0.0f;
-    wavefunc = -1;
-    base = amplitude = phase = frequency = 0.0f;
     rgbgen = RGBGEN_IDENTITY;
+    num_texmods = 0;
+    clamp = false;
   };
 };
 
@@ -276,7 +319,7 @@ public:
   int find_leaf(const vec3f& camera_position);
   void get_visible_faces(const vec3f& camera_position);
 
-  void render(const vec3f& camera_position, unsigned int time);
+  void render(const vec3f& camera_position, float time);
   bool is_cluster_visible(int cluster, int test_cluster);
   void render_face(bsp_face* face);
 
@@ -297,7 +340,7 @@ public:
   GLuint vboId;
   GLuint iboId;
 
-  unsigned int m_time;
+  float m_time;
 
   // some status variables for outputting info
   int m_num_cluster_not_visible;
@@ -342,4 +385,4 @@ public:
   bsp_visdata* m_visdata;
 };
 
-#endif /* _BSP_H_ */
+#endif /* _BSP_H_ */ 
