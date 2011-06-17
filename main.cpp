@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Graphical commands go here
-    map->render(g_cam.position_, (unsigned int)(ticks/200));
+    map->render(g_cam.position_, ((float)ticks)/1000.0f);
     SDL_GL_SwapBuffers();
 
     if (delta != 0)	

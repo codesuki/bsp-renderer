@@ -49,7 +49,6 @@ public:
       else
         texture_format = GL_BGRA;
 
-      std::cout << "translucent" << filename << std::endl;
       shader->translucent = true;
     } 
     else if (num_colors == 3) // no alpha channel
@@ -65,6 +64,17 @@ public:
 
     // Bind the texture object
     glBindTexture(GL_TEXTURE_2D, shader->texture);
+
+    if (shader->clamp)
+    {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+    else
+    {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
  
     // Set the texture's stretching properties
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -81,7 +91,8 @@ public:
 
   static int loadLightmap(bsp_lightmap& lightmap, GLuint* texture)
   {
-    SDL_Surface *image = SDL_CreateRGBSurfaceFrom(static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
+    SDL_Surface *image = SDL_CreateRGBSurfaceFrom(
+        static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
 
     // Have OpenGL generate a texture object handle for us
     glGenTextures(1, texture);

@@ -502,7 +502,7 @@ int get_token_end_pos(const std::string* buffer, int offset)
   }
 }
 
-int get_wave_func(std::string name)
+wavefunc get_wave_func(std::string name)
 {
   if (strcasecmp("sin", name.c_str()) == 0)
   {
@@ -524,7 +524,6 @@ int get_wave_func(std::string name)
   {
     return WAVEFUNC_INVERSESAWTOOTH;
   }
-  return -1;
 }
 
 int get_blend_func(std::string name) 
@@ -640,7 +639,7 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                  std::string token = shaders->substr(i, end_pos-i);
                  i = ++end_pos;
 
-                 if (strcasecmp("map", token.c_str()) == 0 || strcasecmp("clampmap", token.c_str()) == 0) 
+                 if (strcasecmp("map", token.c_str()) == 0) 
                  {
                    end_pos = shaders->find("\r\n", i);
                    token = shaders->substr(i, end_pos-i);
@@ -648,6 +647,16 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                    stage->map = token;
                    stage->map.erase(0, stage->map.find_first_not_of(' '));
                    i = shaders->find("\r\n", i);
+                 } 
+                 else if (strcasecmp("clampmap", token.c_str()) == 0)
+                 {
+                   stage->clamp = true;
+                   end_pos = shaders->find("\r\n", i);
+                   token = shaders->substr(i, end_pos-i);
+                   i = end_pos;
+                   stage->map = token;
+                   stage->map.erase(0, stage->map.find_first_not_of(' '));
+                   i = shaders->find("\r\n", i);    
                  } 
                  else if (strcasecmp("blendfunc", token.c_str()) == 0) 
                  {
@@ -708,27 +717,27 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->wavefunc = get_wave_func(token); 
+                     stage->rgbwave.type = get_wave_func(token); 
                      
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->base = atof(token.c_str());
+                     stage->rgbwave.base = atof(token.c_str());
                      
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->amplitude = atof(token.c_str());
+                     stage->rgbwave.amplitude = atof(token.c_str());
 
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->phase = atof(token.c_str()); 
+                     stage->rgbwave.phase = atof(token.c_str()); 
                                                     
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->frequency = atof(token.c_str()); 
+                     stage->rgbwave.frequency = atof(token.c_str()); 
                    } 
                  } 
                  else if (strcasecmp("tcmod", token.c_str()) == 0) 
@@ -738,27 +747,121 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                    i = ++end_pos;
                    if (strcasecmp("scroll", token.c_str()) == 0) 
                    {
+                     stage->texmods[stage->num_texmods].type = TCMOD_SCROLL;
+
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->scroll[0] = atof(token.c_str());
+                     stage->texmods[stage->num_texmods].scroll[0] = atof(token.c_str());
+
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->scroll[1] = atof(token.c_str());
+                     stage->texmods[stage->num_texmods].scroll[1] = atof(token.c_str());
                    } 
                    else if (strcasecmp("scale", token.c_str()) == 0) 
                    {
+                     stage->texmods[stage->num_texmods].type = TCMOD_SCALE;
+                     
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
-                     stage->scale[0] = atof(token.c_str());
+                     stage->texmods[stage->num_texmods].scale[0] = atof(token.c_str());
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].scale[1] = atof(token.c_str());
+                   } 
+             /*      else if (strcasecmp("turb", token.c_str()) == 0) 
+                   {
+                     stage->texmods[stage->num_texmods++].type = TCMOD_TURB;
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].scale[0] = atof(token.c_str());
+
                      end_pos = get_token_end_pos(shaders, i);
                      token = shaders->substr(i, end_pos-i);
                      i = ++end_pos;
                      stage->scale[1] = atof(token.c_str());
-                   }
-                 } 
+                   }  */  
+                   else if (strcasecmp("transform", token.c_str()) == 0) 
+                   {
+                     stage->texmods[stage->num_texmods].type = TCMOD_TRANSFORM;           
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].matrix[0][0] = atof(token.c_str());
+                                                                                            
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].matrix[0][1] = atof(token.c_str());    
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].matrix[1][0] = atof(token.c_str());       
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].matrix[1][1] = atof(token.c_str()); 
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].translate[0] = atof(token.c_str()); 
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].translate[1] = atof(token.c_str());    
+                     
+                   }   
+                   else if (strcasecmp("stretch", token.c_str()) == 0) 
+                   {
+                     stage->texmods[stage->num_texmods].type = TCMOD_STRETCH;  
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].wave.type = get_wave_func(token); 
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].wave.base = atof(token.c_str());
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].wave.amplitude = atof(token.c_str());
+
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].wave.phase = atof(token.c_str()); 
+                                                    
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].wave.frequency = atof(token.c_str()); 
+                   } 
+                   else if (strcasecmp("rotate", token.c_str()) == 0) 
+                   {
+                     stage->texmods[stage->num_texmods].type = TCMOD_ROTATE;
+                     
+                     end_pos = get_token_end_pos(shaders, i);
+                     token = shaders->substr(i, end_pos-i);
+                     i = ++end_pos;
+                     stage->texmods[stage->num_texmods].rotate_speed = atof(token.c_str());
+                   }                 
+                   stage->num_texmods++;
+                 }     
                  else 
                  {
                    i = shaders->find("\r\n", i);
@@ -854,10 +957,10 @@ void bsp::get_visible_faces(const vec3f& camera_position)
       continue;
     }
 
-    // if (!g_frustum.box_in_frustum(&D3DXVECTOR3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), &D3DXVECTOR3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
-    //   ++m_num_not_in_frustum;
-    //   continue;
-    // }
+    if (!g_frustum.box_in_frustum(vec3f(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), vec3f(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
+       ++m_num_not_in_frustum;
+       continue;
+     }
 
     for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) 
     {
@@ -900,7 +1003,7 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
   return false;
 }
 
-void bsp::render(const vec3f& camera_position, unsigned int time)
+void bsp::render(const vec3f& camera_position, float time)
 {
   get_visible_faces(camera_position);
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
@@ -1052,7 +1155,13 @@ void bsp::prepare_shader(q3_shader& shader, int offset, int lm_index)
       glEnable(GL_BLEND);
       my_blend_func(stage.blendfunc[0], stage.blendfunc[1]);
     }
-   
+   /*
+    if (i == 0 && stage.blendfunc[0] == GL_SRC_ALPHA && stage.blendfunc[1] == GL_ONE_MINUS_SRC_ALPHA)
+    {  
+      glEnable(GL_BLEND);
+      my_blend_func(stage.blendfunc[0], stage.blendfunc[1]);           
+    }
+   */
     my_active_texture(GL_TEXTURE0+i);
 #ifndef __USE_SHADERS__
     glClientActiveTexture(GL_TEXTURE0+i);
@@ -1133,7 +1242,10 @@ void bsp::render_face(bsp_face* face)
     current_shader = shader.shader;
   }  
   
-  glUniform1f(shader.time_idx, m_time);    
+  if (shader.time_idx != -1)
+  {
+    glUniform1f(shader.time_idx, m_time);   
+  } 
 #endif
 
   if (face->type == POLYGON || face->type == MESH) 
@@ -1279,31 +1391,84 @@ void q3_shader::compile()
   
     vertex_shader << "\toutTexCoord" << i << " = inTexCoord;\n";
   }  
+
+  vertex_shader << "float sinval;\n";
+  vertex_shader << "float cosval;\n";
+  vertex_shader << "float s;\n";
+  vertex_shader << "float t;\n";
+  vertex_shader << "float stretch;\n";
   
   for (int i = 0; i < stages.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
-      continue; 
-    
-    if (stages[i]->scale[0] != 1.0f || stages[i]->scale[1] != 1.0f)
-    {   
-      vertex_shader << "\toutTexCoord" << i << ".s *= " << stages[i]->scale[0] << ";\n";
-      vertex_shader << "\toutTexCoord" << i << ".t *= " << stages[i]->scale[1] << ";\n";
-    }
-
-    if (stages[i]->scroll[0] != 0.0f || stages[i]->scroll[1] != 0.0f)
+    for (int j = 0; j < MAX_TEXMODS; ++j)
     {
-      vertex_shader << "\toutTexCoord" << i 
-        << ".s += inTime * " << stages[i]->scroll[0] 
-        << " - floor(inTime * " << stages[i]->scroll[0] << ")" 
-        << ";\n";
-      vertex_shader << "\toutTexCoord" << i
-        << ".t += inTime * " << stages[i]->scroll[1]
-        << " - floor(inTime * " << stages[i]->scroll[1] << ")" 
-        << ";\n";
+      if (stages[i]->texmods[j].type == TCMOD_SCALE)
+      {   
+        vertex_shader << "\toutTexCoord" << i << ".s *= " << stages[i]->texmods[j].scale[0] << ";\n";
+        vertex_shader << "\toutTexCoord" << i << ".t *= " << stages[i]->texmods[j].scale[1] << ";\n";
+      }
+
+      if (stages[i]->texmods[j].type == TCMOD_SCROLL)
+      {
+        vertex_shader << "\toutTexCoord" << i 
+          << ".s += inTime * " << stages[i]->texmods[j].scroll[0] 
+          << " - floor(inTime * " << stages[i]->texmods[j].scroll[0] << ")" 
+          << ";\n";
+        vertex_shader << "\toutTexCoord" << i
+          << ".t += inTime * " << stages[i]->texmods[j].scroll[1]
+          << " - floor(inTime * " << stages[i]->texmods[j].scroll[1] << ")" 
+          << ";\n";
+      }
+
+      if (stages[i]->texmods[j].type == TCMOD_ROTATE)
+      {
+        vertex_shader << "sinval = sin(radians(inTime * " << stages[i]->texmods[j].rotate_speed << "));\n";  
+        vertex_shader << "cosval = cos(radians(inTime * " << stages[i]->texmods[j].rotate_speed << "));\n";  
+        
+        vertex_shader << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+
+        vertex_shader << "\toutTexCoord" << i 
+          << ".s = s * cosval + t * -sinval + (0.5 - 0.5 * cosval + 0.5 * sinval)" 
+          << ";\n";
+        vertex_shader << "\toutTexCoord" << i 
+          << ".t = s * sinval + t * cosval + (0.5 - 0.5 * sinval - 0.5 * cosval)" 
+          << ";\n"; 
+      } 
+      
+      if (stages[i]->texmods[j].type == TCMOD_STRETCH)
+      {             
+        vertex_shader << "sinval = " << stages[i]->texmods[j].wave.amplitude << " * " 
+          << "sin(" 
+          << stages[i]->texmods[j].wave.frequency << " * inTime + " << stages[i]->texmods[j].wave.phase 
+          << ") + " << stages[i]->texmods[j].wave.base << ";\n";  
+        
+        vertex_shader << "stretch = 1.0 / sinval;\n";
+        vertex_shader << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+
+        vertex_shader << "\toutTexCoord" << i << ".s = s * stretch + t * 0 + (0.5 - 0.5 * stretch)" 
+          << ";\n";
+        vertex_shader << "\toutTexCoord" << i << ".t = s * 0 + t * stretch + (0.5 - 0.5 * stretch)" 
+          << ";\n";
+      }
+
+      if (stages[i]->texmods[j].type == TCMOD_TRANSFORM)
+      { 
+        vertex_shader << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+
+        vertex_shader << "\toutTexCoord" << i << ".s = s * " << stages[i]->texmods[j].matrix[0][0]
+          << " + t * " << stages[i]->texmods[j].matrix[1][0]
+          << " + " << stages[i]->texmods[j].translate[0] 
+          << ";\n";
+        vertex_shader << "\toutTexCoord" << i << ".t = s * " << stages[i]->texmods[j].matrix[0][1]
+          << " + t * " << stages[i]->texmods[j].matrix[1][1]
+          << " + " << stages[i]->texmods[j].translate[1] 
+          << ";\n"; 
+      }
     }
   }
-
   
   std::stringstream fragment_shader;
 
@@ -1344,6 +1509,8 @@ void q3_shader::compile()
     }
   }
 
+  fragment_shader << "\tfloat sincolor;\n";
+
   std::string dst;
   std::string src;
 
@@ -1357,7 +1524,7 @@ void q3_shader::compile()
 
     if (i == 0) 
     {
-      dst = "gl_FragColor";
+      dst = "vec4(0.0, 0.0, 0.0, 0.0)";
     }
     else
     {
@@ -1365,26 +1532,45 @@ void q3_shader::compile()
       helper << "color" << i-1;
       dst = helper.str();
     }  
-    
+
     // 0.5 equals 128 when normalized to 0-1 range
-    if (stage.alphafunc != 0)
+    if (stage.alphafunc == GL_GREATER)
     {
-      if (stage.alphafunc == GL_GREATER)
-      {
-        fragment_shader << "if (" << src << ".a > 0) discard;\n";
-      }
-      else if (stage.alphafunc == GL_LESS)
-      {
-        fragment_shader << "if (" << src << ".a > 0.5) discard;\n";
-      }
-      else
-      {
-        fragment_shader << "if (" << src << ".a <= 0.5) discard;\n";
-      }
+      fragment_shader << "\tif (" << src << ".a > 0) discard;\n";
+    }
+    else if (stage.alphafunc == GL_LESS)
+    {
+      fragment_shader << "\tif (" << src << ".a > 0.5) discard;\n";
+    }
+    else if (stage.alphafunc == GL_GEQUAL)
+    {
+      fragment_shader << "\tif (" << src << ".a <= 0.5) discard;\n";
+    }
+
+    switch (stage.rgbgen)
+    {
+      case RGBGEN_IDENTITY:
+        fragment_shader << "\t" << src << " *= ";
+        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0);\n";
+        break;
+      /*case RGBGEN_VERTEX:
+        fragment_shader << "\t" << src << " *= ";
+        fragment_shader << "outColor;\n";
+        break;*/
+      case RGBGEN_WAVE:
+        fragment_shader << "sincolor = clamp(" << stages[i]->rgbwave.amplitude << " * " 
+          << "sin(" 
+          << stages[i]->rgbwave.frequency << " * inTime + " << stages[i]->rgbwave.phase 
+          << ") + " << stages[i]->rgbwave.base << ", 0.0, 1.0);\n";
+
+        fragment_shader << "\t" << src << " *= vec4(sincolor, sincolor, sincolor, 1.0);\n";
+        break;
+      default:
+        fragment_shader << "\t" << src << " *= ";
+        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0);\n";
     }
 
     fragment_shader << "\t" << src << " = (" << src << " * ";
-
     switch (stage.blendfunc[0])
     {
       case GL_ONE:
@@ -1447,24 +1633,7 @@ void q3_shader::compile()
         std::cout << stage.map << " :: " << stage.blendfunc[1] << std::endl; 
     }
 
-    fragment_shader << ");\n";    
-
-    fragment_shader << "\t" << src << " *= ";
-    switch (stage.rgbgen)
-    {
-      case RGBGEN_IDENTITY:
-        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0)";
-        break;
-      case RGBGEN_VERTEX:
-        fragment_shader << "outColor";
-        break;
-      case RGBGEN_WAVE:
-        fragment_shader << stages[i]->amplitude << " * " << "sin(" << stages[i]->frequency << " * inTime + " << stages[i]->phase << ") + " << stages[i]->base;
-        break;
-      default:
-        fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0)";
-    }
-    fragment_shader << ";\n"; 
+    fragment_shader << ");\n"; 
   }   
 
   fragment_shader << "\t" << "fragColor = " << src << ";\n";  
