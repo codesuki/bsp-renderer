@@ -1,6 +1,9 @@
 #include "camera.h"
+#include "bsp.h"
 
-camera::camera(vec3f* position) : position_(*position), yaw_(0.0f), pitch_(0.0f)
+extern bool g_noclip;
+
+camera::camera(vec3f* position, bsp* map) : position_(*position), yaw_(0.0f), pitch_(0.0f), map_(map)
 {
 }
 
@@ -11,8 +14,19 @@ camera::~camera(void)
 void camera::move(float dir)
 {
   dir = dir * difference_;
-  position_ += look_*dir;
-  
+
+  if (!g_noclip)
+  {
+    vec3f wish_position = position_ + look_ * dir;
+    std::cout << "wishpos before: " << wish_position << std::endl;
+    map_->trace(position_, wish_position);
+    std::cout << "wishpos after: " << wish_position << std::endl;
+    position_ = wish_position;
+  }
+  else
+  {
+    position_ += look_*dir;
+  }
 }
 
 void camera::strafe(float dir)
