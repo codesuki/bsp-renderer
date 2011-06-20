@@ -2,6 +2,9 @@
 #include "util.h"
 #include "texture.h"
 #include "bezier.h"
+#include "frustum.h"
+
+extern myfrustum g_frustum;
 
 bsp::bsp(void)
 {
@@ -906,7 +909,14 @@ int bsp::find_leaf(const vec3f& camera_position)
       */
     vec3f pos = transform_matrix * camera_position;
 
-    const float distance = plane.normal.dot(pos) - plane.distance;
+  /*  if (plane.type < 3) // type < 3 -> axial plane
+    {
+      const float distance = pos[plane->type] - plane.distance;
+    }
+    else
+  */  
+      const float distance = plane.normal.dot(pos) - plane.distance;
+    
 
     if (distance >= 0) 
     {
@@ -956,12 +966,12 @@ void bsp::get_visible_faces(const vec3f& camera_position)
       ++m_num_cluster_not_visible;
       continue;
     }
-
-    if (!g_frustum.box_in_frustum(vec3f(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), vec3f(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
+    /*
+    if (!g_frustum.box_in_frustum(&vec3f(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), &vec3f(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
        ++m_num_not_in_frustum;
        continue;
      }
-
+      */
     for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) 
     {
       int face = m_leaffaces[j].face;
@@ -990,6 +1000,7 @@ void bsp::get_visible_faces(const vec3f& camera_position)
   //std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
   //std::cout << "skipped faces:  " << m_num_skipped_faces << std::endl;
   //std::cout << "total faces:    " << m_num_faces << std::endl;
+  //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
 }
 
 bool faceSort(const bsp_face* left, const bsp_face* right)
@@ -1006,7 +1017,6 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
 void bsp::render(const vec3f& camera_position, float time)
 {
   get_visible_faces(camera_position);
-  //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
 
   std::map<std::string, q3_shader*>::iterator it;
@@ -1095,11 +1105,16 @@ void my_active_texture(unsigned int new_active_texture)
 void bsp::prepare_shader(q3_shader& shader, int offset, int lm_index)
 { 
   static q3_shader* current_shader = 0;
+  static int current_lm = -1;
 
   const bsp_vertex& vertex = m_vertexes[offset];
   
   if (&shader == current_shader)
   {
+    if (lm_index == current_lm) return;
+
+    current_lm = lm_index;
+
     for (int i = 0; i < shader.stages.size(); ++i)
     {
       const q3_shader_stage& stage = *(shader.stages[i]);
@@ -1119,6 +1134,8 @@ void bsp::prepare_shader(q3_shader& shader, int offset, int lm_index)
 #else
         glTexCoordPointer(2, GL_FLOAT, sizeof(bsp_vertex), &(vertex.lmcoord));
 #endif
+#else
+        break;
 #endif
       }
       else
@@ -1253,19 +1270,15 @@ void bsp::render_face(bsp_face* face)
     if (offset >= m_num_vertexes) return;
 #ifdef __USE_VBO__
 #ifdef __USE_SHADERS__     
-    glEnableVertexAttribArray(shader.position_idx);   
     glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
     
-    glEnableVertexAttribArray(shader.tex_coord_idx);   
     glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(vec3f)));
     
-    glEnableVertexAttribArray(shader.lm_coord_idx);   
     glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(vec3f)+sizeof(vec2f)));
 
-    glEnableVertexAttribArray(shader.color_idx);
     glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
         BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));    
 #else
@@ -1282,7 +1295,7 @@ void bsp::render_face(bsp_face* face)
 #else 
     glVertexPointer(3, GL_FLOAT, stride, &(m_vertexes[offset].position));
     glColorPointer(4, GL_BYTE, stride, &(m_vertexes[offset].color));
-    glDrawElements(GL_TRIANGLES, 
+    glDrawElements(GL_TRIANGLE_STRIP, 
         current_face.num_meshverts,
         GL_UNSIGNED_INT, 
         &(m_meshverts[current_face.meshvert])); 
@@ -1319,19 +1332,15 @@ void bsp::render_face(bsp_face* face)
     {
       const bezier* b = patches[i];
 
-      glEnableVertexAttribArray(shader.position_idx);   
       glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset));
     
-      glEnableVertexAttribArray(shader.tex_coord_idx);   
       glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset+sizeof(vec3f)));
     
-      glEnableVertexAttribArray(shader.lm_coord_idx);   
       glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset+sizeof(vec3f)+sizeof(vec2f)));
 
-      glEnableVertexAttribArray(shader.color_idx);
       glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
 
@@ -1675,9 +1684,13 @@ void q3_shader::compile()
   time_idx = glGetUniformLocation(shader, "inTime");
   
   position_idx = glGetAttribLocation(shader, "inPosition");
+  glEnableVertexAttribArray(position_idx);
   tex_coord_idx = glGetAttribLocation(shader, "inTexCoord");
+  glEnableVertexAttribArray(tex_coord_idx);
   lm_coord_idx = glGetAttribLocation(shader, "inLmCoord");
+  glEnableVertexAttribArray(lm_coord_idx);
   color_idx = glGetAttribLocation(shader, "inColor");
+  glEnableVertexAttribArray(color_idx);
 
   glUseProgram(shader);
   for (int i = 0; i < 8; ++i)
@@ -1745,4 +1758,177 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList)
   return program;
 }
 
+#define EPSILON 0.125
+
+bool output_starts_out;
+bool output_all_solid;
+float output_fraction;
+  
+void bsp::trace(vec3f& start, vec3f& end)
+{
+  output_starts_out = true;
+  output_all_solid = false;
+  output_fraction = 1.0f;
+
+  check_node(0, 0.0f, 1.0f, start, end);
+
+  if (output_fraction == 1.0f)
+  {
+    end = end;
+  }
+  else
+  {
+    end = start + output_fraction * (end - start);
+  }
+}
+
+void bsp::check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end)
+{
+  if (index < 0)
+  {
+    const bsp_leaf& leaf = m_leafs[-(index + 1)];
+
+    for (int i = 0; i < leaf.num_leafbrushes; ++i)
+    {
+      const bsp_brush& brush = m_brushes[m_leafbrushes[leaf.leafbrush + i].brush];
+      
+      if (brush.num_brushsides > 0 && m_textures[brush.texture].contents & 1)
+      {
+        check_brush(brush, start, end);
+      }
+    }
+
+    return;
+  }
+
+  const bsp_node& node = m_nodes[index];
+  const bsp_plane& plane = m_planes[node.plane];
+
+  const float start_distance = plane.normal.dot(start) - plane.distance;
+  const float end_distance = plane.normal.dot(end) - plane.distance;
+
+  if (start_distance >= 0 && end_distance >= 0) // both in front of plane 
+  {
+    check_node(node.front, start_fraction, end_fraction, start, end);
+  } 
+  else if (start_distance < 0 && end_distance < 0) // both behind the plane
+  {
+    check_node(node.back, start_fraction, end_fraction, start, end);
+  }
+  else 
+  {
+    int side;
+    float fraction1, fraction2, middle_fraction;
+    vec3f middle;
+
+    if (start_distance < end_distance)
+    {
+      side = 1;
+      float inverse_distance = 1.0f / (start_distance - end_distance);
+      fraction1 = fraction2 = (start_distance + EPSILON) * inverse_distance;
+    }
+    else if (end_distance < start_distance)
+    {
+      side = 0;
+      float inverse_distance = 1.0f / (start_distance - end_distance);
+      fraction1 = (start_distance + EPSILON) * inverse_distance;
+      fraction2 = (start_distance - EPSILON) * inverse_distance;
+    }
+    else
+    {
+      side = 0;
+      fraction1 = 1.0f;
+      fraction2 = 0.0f;
+    }
+
+    middle_fraction = start_fraction + (end_fraction - start_fraction) * fraction1;
+    middle = start + fraction1 * (end - start);
+
+    if (side == 0)
+      check_node(node.front, start_fraction, middle_fraction, start, middle);
+    else
+      check_node(node.back, start_fraction, middle_fraction, start, middle);
+
+    middle_fraction = start_fraction + (end_fraction - start_fraction) * fraction2;
+    middle = start + fraction2 * (end - start);
+    
+    if (!side == 0)
+      check_node(node.front, middle_fraction, end_fraction, middle, end);
+    else
+      check_node(node.back, middle_fraction, end_fraction, middle, end);
+  }
+}       
+
+void bsp::check_brush(const bsp_brush& brush, vec3f start, vec3f end)
+{
+  float start_fraction = -1.0f;
+  float end_fraction = 1.0f;
+  bool starts_out = false;
+  bool ends_out = false;
+
+  for (int i = 0; i < brush.num_brushsides; ++i)
+  {
+    bsp_brushside& brushside = m_brushsides[brush.brushside + i];
+    bsp_plane& plane = m_planes[brushside.plane];
+
+    const float start_distance = plane.normal.dot(start) - plane.distance;
+    const float end_distance = plane.normal.dot(end) - plane.distance; 
+
+    if (start_distance > 0)
+    {
+      starts_out = true;
+    }
+    if (end_distance > 0)
+    {
+      ends_out = true;
+    }
+
+    if (start_distance > 0 && end_distance > 0) // both in front of plane 
+    {
+      continue;
+    } 
+    else if (start_distance <= 0 && end_distance <= 0) // both behind the plane
+    {
+      continue;
+    }
+
+    if (start_distance < end_distance)
+    {
+      float fraction = (start_distance - EPSILON) / (start_distance - end_distance);
+      if (fraction > start_fraction)
+      {
+        start_fraction = fraction;
+      }
+    }
+    else
+    {
+      float fraction = (start_distance + EPSILON) / (start_distance - end_distance);
+      if (fraction < end_fraction)
+      {
+        end_fraction = fraction;
+      }
+    }  
+  }
+
+  if (starts_out == false)
+  {
+    output_starts_out = false;
+    if (ends_out == false)
+    {
+      output_all_solid = true;
+    }
+  }
+  
+  if (start_fraction < end_fraction)
+  {
+    if (start_fraction > -1.0f && start_fraction < output_fraction)
+    {
+      if (start_fraction < 0.0f)
+      {
+        start_fraction = 0.0f;
+      }
+      output_fraction = start_fraction;
+    }
+  }
+}
 

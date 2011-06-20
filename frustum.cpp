@@ -8,96 +8,61 @@ myfrustum::~myfrustum(void)
 {
 }
 
-
+void normalize_plane(vec4f& plane)
+{
+    vec3f& vector = plane.get_sub_vector<3>();
+    float len = 1.0 / vector.length();
+    plane.x() *= len;
+    plane.y() *= len;
+    plane.z() *= len;
+    plane.w() *= len;
+}
 
 void myfrustum::extract_planes(mat4f* viewMatrix, mat4f* projectionMatrix)
 {      
 	mat4f combinedMatrix = *viewMatrix * *projectionMatrix;
 
 	// Left plane
-	m_planes[0][0] = combinedMatrix(4,1) + combinedMatrix(1,1);
-	m_planes[0][1] = combinedMatrix(4,2) + combinedMatrix(1,2);
-	m_planes[0][2] = combinedMatrix(4,3) + combinedMatrix(1,3);
-	m_planes[0][3] = combinedMatrix(4,4) + combinedMatrix(1,4);
+	m_planes[0][0] = combinedMatrix(4-1,1-1) + combinedMatrix(1-1,1-1);
+	m_planes[0][1] = combinedMatrix(4-1,2-1) + combinedMatrix(1-1,2-1);
+	m_planes[0][2] = combinedMatrix(4-1,3-1) + combinedMatrix(1-1,3-1);
+	m_planes[0][3] = combinedMatrix(4-1,4-1) + combinedMatrix(1-1,4-1);
 
 	// Right plane
-	m_planes[1][0] = combinedMatrix(4,1) - combinedMatrix(1,1);
-	m_planes[1][1] = combinedMatrix(4,2) - combinedMatrix(1,2);
-	m_planes[1][2] = combinedMatrix(4,3) - combinedMatrix(1,3);
-	m_planes[1][3] = combinedMatrix(4,4) - combinedMatrix(1,4);
+	m_planes[1][0] = combinedMatrix(4-1,1-1) - combinedMatrix(1-1,1-1);
+	m_planes[1][1] = combinedMatrix(4-1,2-1) - combinedMatrix(1-1,2-1);
+	m_planes[1][2] = combinedMatrix(4-1,3-1) - combinedMatrix(1-1,3-1);
+	m_planes[1][3] = combinedMatrix(4-1,4-1) - combinedMatrix(1-1,4-1);
 
 	// Top plane
-	m_planes[2][0] = combinedMatrix(4,1) - combinedMatrix(2,1);
-	m_planes[2][1] = combinedMatrix(4,2) - combinedMatrix(2,2);
-	m_planes[2][2] = combinedMatrix(4,3) - combinedMatrix(2,3);
-	m_planes[2][3] = combinedMatrix(4,4) - combinedMatrix(2,4);
+	m_planes[2][0] = combinedMatrix(4-1,1-1) - combinedMatrix(2-1,1-1);
+	m_planes[2][1] = combinedMatrix(4-1,2-1) - combinedMatrix(2-1,2-1);
+	m_planes[2][2] = combinedMatrix(4-1,3-1) - combinedMatrix(2-1,3-1);
+	m_planes[2][3] = combinedMatrix(4-1,4-1) - combinedMatrix(2-1,4-1);
 
 	// Bottom plane
-	m_planes[3][0] = combinedMatrix(4,1) + combinedMatrix(2,1);
-	m_planes[3][1] = combinedMatrix(4,2) + combinedMatrix(2,2);
-	m_planes[3][2] = combinedMatrix(4,3) + combinedMatrix(2,3);
-	m_planes[3][3] = combinedMatrix(4,4) + combinedMatrix(2,4);
+	m_planes[3][0] = combinedMatrix(4-1,1-1) + combinedMatrix(2-1,1-1);
+	m_planes[3][1] = combinedMatrix(4-1,2-1) + combinedMatrix(2-1,2-1);
+	m_planes[3][2] = combinedMatrix(4-1,3-1) + combinedMatrix(2-1,3-1);
+	m_planes[3][3] = combinedMatrix(4-1,4-1) + combinedMatrix(2-1,4-1);
 
 	// Near plane
 
-	m_planes[4][0] = combinedMatrix(3,1);
-	m_planes[4][1] = combinedMatrix(3,2);
-	m_planes[4][2] = combinedMatrix(3,3);
-	m_planes[4][3] = combinedMatrix(3,4);
+	m_planes[4][0] = combinedMatrix(4-1,1-1) + combinedMatrix(3-1,1-1);
+	m_planes[4][1] = combinedMatrix(4-1,1-1) + combinedMatrix(3-1,2-1);
+	m_planes[4][2] = combinedMatrix(4-1,1-1) + combinedMatrix(3-1,3-1);
+	m_planes[4][3] = combinedMatrix(4-1,1-1) + combinedMatrix(3-1,4-1);
 
 	// Far plane
-	m_planes[5][0] = combinedMatrix(4,1) - combinedMatrix(3,1);
-	m_planes[5][1] = combinedMatrix(4,2) - combinedMatrix(3,2);
-	m_planes[5][2] = combinedMatrix(4,3) - combinedMatrix(3,3);
-	m_planes[5][3] = combinedMatrix(4,4) - combinedMatrix(3,4); 
+	m_planes[5][0] = combinedMatrix(4-1,1-1) - combinedMatrix(3-1,1-1);
+	m_planes[5][1] = combinedMatrix(4-1,2-1) - combinedMatrix(3-1,2-1);
+	m_planes[5][2] = combinedMatrix(4-1,3-1) - combinedMatrix(3-1,3-1);
+	m_planes[5][3] = combinedMatrix(4-1,4-1) - combinedMatrix(3-1,4-1); 
 
 	// Normalize planes
 	for (int i = 0; i < 6; ++i) {	
-		m_planes[i].normalize();
+		normalize_plane(m_planes[i]);
 	}   
-
-/*
-	// Left plane
-	m_planes[0][0] = combinedMatrix._14 + combinedMatrix._11;
-	m_planes[0][1] = combinedMatrix._24 + combinedMatrix._21;
-	m_planes[0][2] = combinedMatrix._34 + combinedMatrix._31;
-	m_planes[0][3] = combinedMatrix._44 + combinedMatrix._41;
-
-	// Right plane
-	m_planes[1][0] = combinedMatrix._14 - combinedMatrix._11;
-	m_planes[1][1] = combinedMatrix._24 - combinedMatrix._21;
-	m_planes[1][2] = combinedMatrix._34 - combinedMatrix._31;
-	m_planes[1][3] = combinedMatrix._44 - combinedMatrix._41;
-
-	// Top plane
-	m_planes[2][0] = combinedMatrix._14 - combinedMatrix._12;
-	m_planes[2][1] = combinedMatrix._24 - combinedMatrix._22;
-	m_planes[2][2] = combinedMatrix._34 - combinedMatrix._32;
-	m_planes[2][3] = combinedMatrix._44 - combinedMatrix._42;
-
-	// Bottom plane
-	m_planes[3][0] = combinedMatrix._14 + combinedMatrix._12;
-	m_planes[3][1] = combinedMatrix._24 + combinedMatrix._22;
-	m_planes[3][2] = combinedMatrix._34 + combinedMatrix._32;
-	m_planes[3][3] = combinedMatrix._44 + combinedMatrix._42;
-
-	// Near plane
-	m_planes[4][0] = combinedMatrix._13;
-	m_planes[4][1] = combinedMatrix._23;
-	m_planes[4][2] = combinedMatrix._33;
-	m_planes[4][3] = combinedMatrix._43;
-
-	// Far plane
-	m_planes[5][0] = combinedMatrix._14 - combinedMatrix._13;
-	m_planes[5][1] = combinedMatrix._24 - combinedMatrix._23;
-	m_planes[5][2] = combinedMatrix._34 - combinedMatrix._33;
-	m_planes[5][3] = combinedMatrix._44 - combinedMatrix._43; 
-
-	// Normalize planes
-	for (int i = 0; i < 6; ++i) {	
-		D3DXPlaneNormalize(&m_planes[i], &m_planes[i]);
-	}      
-*/
 }
 
 // TODO: maybe optimize parameters
