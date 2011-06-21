@@ -334,7 +334,7 @@ class bsp
     void end_shader(const q3_shader& shader);
 
 
-    void trace(vec3f& start, vec3f& end);
+    float trace(vec3f& start, vec3f& end);
     void check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end);
     void check_brush(const bsp_brush& brush, vec3f start, vec3f end);
 

@@ -17,11 +17,22 @@ void camera::move(float dir)
 
   if (!g_noclip)
   {
+    mat4f transform_matrix;
+    transform_matrix = quake2oglMatrix;
+
     vec3f wish_position = position_ + look_ * dir;
+
+    vec3f end = transform_matrix * wish_position;
+    vec3f start = transform_matrix * position_;
+
     std::cout << "wishpos before: " << wish_position << std::endl;
-    map_->trace(position_, wish_position);
-    std::cout << "wishpos after: " << wish_position << std::endl;
-    position_ = wish_position;
+    float fraction = map_->trace(start, end);
+    if (fraction != 1)
+    {
+      std::cout << "wishpos after: " << wish_position * fraction << " fraction: " << fraction << std::endl;
+      return;
+    }
+    position_ += look_ * dir * fraction;
   }
   else
   {
@@ -32,7 +43,30 @@ void camera::move(float dir)
 void camera::strafe(float dir)
 {
   dir = dir * difference_;
-  position_ += right_*dir;
+
+  if (!g_noclip)
+  {  
+    mat4f transform_matrix;
+    transform_matrix = quake2oglMatrix;
+
+    vec3f wish_position = position_ + right_ * dir;  
+    
+    vec3f end = transform_matrix * wish_position;
+    vec3f start = transform_matrix * position_;
+
+    std::cout << "wishpos before: " << wish_position << std::endl;
+    float fraction = map_->trace(start, end);
+    if (fraction != 1)
+    { 
+      std::cout << "wishpos after: " << wish_position * fraction << " fraction: " << fraction << std::endl;
+      return;
+    }
+    position_ += right_ * dir * fraction; 
+  }
+  else
+  {
+    position_ += right_ * dir;
+  }
 }
 
 void camera::updateTime(float time)
