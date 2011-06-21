@@ -915,7 +915,7 @@ int bsp::find_leaf(const vec3f& camera_position)
     }
     else
   */  
-      const float distance = plane.normal.dot(pos) - plane.distance;
+    const float distance = plane.normal.dot(pos) - plane.distance;
     
 
     if (distance >= 0) 
@@ -1764,13 +1764,15 @@ bool output_starts_out;
 bool output_all_solid;
 float output_fraction;
   
-void bsp::trace(vec3f& start, vec3f& end)
+float bsp::trace(vec3f& start, vec3f& end)
 {
   output_starts_out = true;
   output_all_solid = false;
   output_fraction = 1.0f;
 
   check_node(0, 0.0f, 1.0f, start, end);
+
+  return output_fraction;
 
   if (output_fraction == 1.0f)
   {
