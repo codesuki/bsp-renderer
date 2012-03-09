@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     mm = m;
     pm = p;
 
-    g_frustum.extract_planes(&mm, &pm);
+    g_frustum.extract_planes(mm, pm);
 
     // Graphical commands go here
     map->render(g_cam.position_, ((float)ticks)/1000.0f);

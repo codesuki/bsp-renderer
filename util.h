@@ -47,7 +47,8 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList);
 
 // convert from our coordinate system (looking down X)
 // to OpenGL's coordinate system (looking down -Z)     
-static const GLfloat quake2oglMatrix[16] = {0, 0, -1, 0,
+static const GLfloat quake2oglMatrix[16] = 
+ {0, 0, -1, 0,
   -1, 0, 0, 0,
   0, 1, 0, 0,
   0, 0, 0, 1};
