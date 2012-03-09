@@ -4,6 +4,8 @@
 #include "bezier.h"
 #include "frustum.h"
 
+#include "boost/filesystem.hpp"
+
 extern myfrustum g_frustum;
 
 bsp::bsp(void)
@@ -197,9 +199,12 @@ bsp::bsp(std::string filename)
      m_vertexes[i].color[3] = 0xff;
      }
      */
+
+  std::cout << "loading shaders" << std::endl;
+
   load_shaders();
 
-  //std::cout << "checking shaders" << std::endl;
+  std::cout << "checking shaders" << std::endl;
 
   for (int i = 0; i < m_num_textures; ++i) 
   {
@@ -317,7 +322,7 @@ bsp::bsp(std::string filename)
       std::map<std::string, q3_shader*>::iterator it;
       it = m_shaders.find(m_textures[i].name);
 
-      std::cout << "processing: " << it->first << std::endl;
+      //std::cout << "processing: " << it->first << std::endl;
       it->second->compile();
     }
   }
@@ -414,8 +419,8 @@ int read_shader(const char *file_name, const struct stat *file_info, int file_ty
 
   std::string filename = "";
   filename.append(file_name);
-  std::ifstream ifs(filename.c_str(), std::ios::in);
 
+  std::ifstream ifs(filename.c_str(), std::ios::in);
   ifs.read(buffer, file_info->st_size);
   ifs.close();
 
@@ -425,11 +430,42 @@ int read_shader(const char *file_name, const struct stat *file_info, int file_ty
   return 0;
 }
 
+int read_shader2(std::string file_name, int file_size)
+{
+  char* buffer = new char[file_size];
+
+  std::ifstream ifs(file_name.c_str(), std::ios::in);
+  ifs.read(buffer, file_size);
+  ifs.close();
+
+  g_shaders.append(buffer, ifs.gcount());
+  SAFE_DELETE_ARRAY(buffer);
+
+  return 0;
+}
+
+#define BFS boost::filesystem
+
 void bsp::load_shaders()
 {
-  // load all shaders into g_shaders
-  ftw("scripts/", &read_shader, 1);
+  BFS::path script_path( "./scripts/" );
+	BFS::directory_iterator end_itr;
+	for ( BFS::directory_iterator itr( script_path );
+        itr != end_itr;
+        ++itr )
+  {
+    if ( BFS::is_directory(itr->status()) )
+    {
+    	continue;
+    }
+    else if ( BFS::is_regular_file(itr->status()) ) // see below
+    {
+      read_shader2(itr->path().string(), BFS::file_size(itr->path()));
+    }
+  }
 
+  // load all shaders into g_shaders
+  //ftw("scripts/", &read_shader, 1);
   //std::cout << "shader buffer length: " << g_shaders.length() << std::endl;
 
   bool is_shader = false;
@@ -466,12 +502,11 @@ void bsp::load_shaders()
           current_shader->name = name;
           m_shaders.insert(std::pair<std::string, q3_shader*>(name, current_shader));
           is_shader = true;
-
-          //std::cout << "read shader: " << name << std::endl;
         }
 
         break;
       case '}':
+        std::cout << "read shader " << current_shader->name << " with " << current_shader->stages.size() << " stages" << std::endl;
         name = "";
         is_shader = false;
         break;
@@ -481,7 +516,7 @@ void bsp::load_shaders()
       case 0x0A: break;
       case 0x0D: break;
       default:
-                 name.append(1, g_shaders[i]);
+        name.append(1, g_shaders[i]);
     }
   }
 }
@@ -631,6 +666,13 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
   {
     switch ((*shaders)[i]) 
     {
+      case '/':
+        if ((*shaders)[i+1] == '/') 
+        {
+          i = (*shaders).find("\r\n", i);
+          break;
+        } 
+        break;
       case '{': break;
       case '}': return i;
       case ' ': break;
@@ -865,10 +907,6 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
                    }                 
                    stage->num_texmods++;
                  }     
-                 else 
-                 {
-                   i = shaders->find("\r\n", i);
-                 }
     }
   }
   return i;
@@ -966,12 +1004,16 @@ void bsp::get_visible_faces(const vec3f& camera_position)
       ++m_num_cluster_not_visible;
       continue;
     }
-    /*
-    if (!g_frustum.box_in_frustum(&vec3f(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]), &vec3f(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]))) {
+   
+	vec3f min = vec3f((-1)*m_leafs[i].mins[2], (-1)*m_leafs[i].mins[0], m_leafs[i].mins[1]);
+	vec3f max = vec3f((-1)*m_leafs[i].maxs[2], (-1)*m_leafs[i].maxs[0], m_leafs[i].maxs[1]);
+
+    if (!g_frustum.box_in_frustum(min, max)) 
+	{
        ++m_num_not_in_frustum;
        continue;
-     }
-      */
+    }
+     
     for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) 
     {
       int face = m_leaffaces[j].face;

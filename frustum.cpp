@@ -18,9 +18,9 @@ void normalize_plane(vec4f& plane)
     plane.w() *= len;
 }
 
-void myfrustum::extract_planes(mat4f* viewMatrix, mat4f* projectionMatrix)
+void myfrustum::extract_planes(mat4f& viewMatrix, mat4f& projectionMatrix)
 {      
-	mat4f combinedMatrix = *viewMatrix * *projectionMatrix;
+	mat4f combinedMatrix = viewMatrix * projectionMatrix;
 
 	// Left plane
 	m_planes[0][0] = combinedMatrix(4-1,1-1) + combinedMatrix(1-1,1-1);
@@ -60,23 +60,25 @@ void myfrustum::extract_planes(mat4f* viewMatrix, mat4f* projectionMatrix)
 	m_planes[5][3] = combinedMatrix(4-1,4-1) - combinedMatrix(3-1,4-1); 
 
 	// Normalize planes
-	for (int i = 0; i < 6; ++i) {	
+	for (int i = 0; i < 6; ++i) 
+	{	
 		normalize_plane(m_planes[i]);
 	}   
 }
 
 // TODO: maybe optimize parameters
-bool myfrustum::box_in_frustum(vec3f* min, vec3f* max)
+bool myfrustum::box_in_frustum(vec3f& min, vec3f& max)
 {  
-	for (int i = 0; i < 6; i++) {
-		if (m_planes[i].distance_to_plane(vec3f(min->x(), min->y(), min->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(max->x(), min->y(), min->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(min->x(), max->y(), min->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(max->x(), max->y(), min->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(min->x(), min->y(), max->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(max->x(), min->y(), max->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(min->x(), max->y(), max->z())) > 0) continue;
-		if (m_planes[i].distance_to_plane(vec3f(max->x(), max->y(), max->z())) > 0) continue;
+	for (int i = 0; i < 6; i++) 
+	{
+		if (m_planes[i].distance_to_plane(vec3f(min.x(), min.y(), min.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(max.x(), min.y(), min.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(min.x(), max.y(), min.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(max.x(), max.y(), min.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(min.x(), min.y(), max.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(max.x(), min.y(), max.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(min.x(), max.y(), max.z())) > 0) continue;
+		if (m_planes[i].distance_to_plane(vec3f(max.x(), max.y(), max.z())) > 0) continue;
 
 		// If we get here, it isn't in the frustum
 		return false;
