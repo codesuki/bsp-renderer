@@ -2,9 +2,10 @@
 #include "bsp.h"
 #include "camera.h"
 #include "frustum.h"
+#include "Logger.h"
 
-#define WIDTH 1024
-#define HEIGHT 728 
+#define WIDTH 1280
+#define HEIGHT 720
 
 myfrustum g_frustum;
 bool g_noclip = true;
@@ -13,8 +14,7 @@ int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
   {
-    std::cout << "Die SDL konnte nicht initialisiert werden (" 
-      << SDL_GetError() << ")" << std::endl;
+    Logger::Log(Logger::DEBUG, "Die SDL konnte nicht initialisiert werden (%s)", SDL_GetError());
   }
 
   IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
@@ -25,19 +25,20 @@ int main(int argc, char **argv)
   SDL_WM_SetCaption("Test", "Test2");
   SDL_SetVideoMode(WIDTH, HEIGHT, 32, SDL_OPENGL);
 
+  // TODO: after initializing glew check if all needed functions are available.. fall back if not or just quit
   GLenum err = glewInit();
   if (GLEW_OK != err)
   {
-    fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+    Logger::Log(Logger::ERROR, "Error: %s", glewGetErrorString(err));
   } 
-  fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+  Logger::Log(Logger::ERROR, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
 
   vec3f vEyePt( -10.0, 10.0, 20.0 );
 
-  SDL_WarpMouse(400, 300);
+  SDL_WarpMouse(WIDTH/2, HEIGHT/2);
 
-  bsp *map = new bsp(argv[1]);
+  bsp *map = new bsp("maps\\q3dm6.bsp");
 
 
   camera g_cam(&vEyePt, map);
@@ -57,44 +58,44 @@ int main(int argc, char **argv)
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(90, (float)WIDTH/HEIGHT, 1, 10000);
-    
+
   glMatrixMode(GL_MODELVIEW);
 
   unsigned int ticks = 0;   
   unsigned int delta = 0;
-  
+
   while (true)
   {
     delta = SDL_GetTicks() - ticks;
 
     g_cam.updateTime(delta);
-    
+
     ticks = SDL_GetTicks(); 
-    
+
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) 
     {
       switch (event.type)
       {
-        case SDL_QUIT:
+      case SDL_QUIT:
+        SDL_Quit();
+        exit(0);
+        break;
+      case SDL_KEYDOWN:
+        if(event.key.keysym.sym == SDLK_ESCAPE)
+        {    
           SDL_Quit();
           exit(0);
-          break;
-        case SDL_KEYDOWN:
-          if(event.key.keysym.sym == SDLK_ESCAPE)
-          {    
-            SDL_Quit();
-            exit(0);
-          }
-          if(event.key.keysym.sym == SDLK_n)
-          {
-            g_noclip = !g_noclip;
-            std::cout << "noclip is " << g_noclip << std::endl;
-          }
-          break;
-        default:
-          break;
+        }
+        if(event.key.keysym.sym == SDLK_n)
+        {
+          g_noclip = !g_noclip;
+          Logger::Log(Logger::DEFAULT, "noclip is %i", g_noclip);
+        }
+        break;
+      default:
+        break;
       }
     }                      
 
@@ -124,7 +125,7 @@ int main(int argc, char **argv)
     glMultMatrixf(g_cam.GetMatrix());
     glMultMatrixf(quake2oglMatrix);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
+
     mat4f mm, pm;
     float m[16], p[16];
 
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
     //if (delta != 0)	
     //  std::cout << "frametime in ms: " << delta << " fps: " << 1000 / delta << std::endl;  
 
-    //SDL_ShowCursor(SDL_DISABLE);
+    SDL_ShowCursor(SDL_DISABLE);
   }
 
   IMG_Quit();
