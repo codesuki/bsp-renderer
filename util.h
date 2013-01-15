@@ -11,19 +11,17 @@
 #include <string>
 #include <sstream>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <ftw.h>
-
 #include "vmmlib/vmmlib.hpp"
 using namespace vmml;
+
+#define strcasecmp _stricmp
 
 //#define GL_GLEXT_PROTOTYPES
 
 #define __USE_VBO__
 #define __USE_SHADERS__
 
-#include "glew.h"
+#include "glew/glew.h"
 
 #include "SDL.h"
 //#include "SDL_opengl.h"
@@ -38,19 +36,19 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList);
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 #define glError() { \
-	GLenum err = glGetError(); \
-	while (err != GL_NO_ERROR) { \
-		fprintf(stderr, "glError: %s caught at %s:%u\n", (char *)gluErrorString(err), __FILE__, __LINE__); \
-		err = glGetError(); \
-	} \
+  GLenum err = glGetError(); \
+  while (err != GL_NO_ERROR) { \
+  fprintf(stderr, "glError: %s caught at %s:%u\n", (char *)gluErrorString(err), __FILE__, __LINE__); \
+  err = glGetError(); \
+  } \
 }
 
 // convert from our coordinate system (looking down X)
 // to OpenGL's coordinate system (looking down -Z)     
 static const GLfloat quake2oglMatrix[16] = 
- {0, 0, -1, 0,
-  -1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 1};
+{0, 0, -1, 0,
+-1, 0, 0, 0,
+0, 1, 0, 0,
+0, 0, 0, 1};
 
 #endif

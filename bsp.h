@@ -118,7 +118,7 @@ public:
   unsigned char color[4];
 
   /**
-     Used for bezier patch tesselation
+  Used for bezier patch tesselation
   */
   bsp_vertex operator+(const bsp_vertex& v) const {
     bsp_vertex res;
@@ -132,7 +132,7 @@ public:
   }
 
   /**
-     Used for bezier patch tesselation
+  Used for bezier patch tesselation
   */
   bsp_vertex operator*(float factor) const      {
     bsp_vertex res;
@@ -239,7 +239,7 @@ struct waveform
   float phase;
   float frequency; 
 };
- 
+
 struct texmod
 {
   tcmod type;
@@ -274,7 +274,7 @@ struct q3_shader_stage {
 
   int num_texmods;
   texmod texmods[MAX_TEXMODS];
-  
+
   q3_shader_stage() 
   {
     texture = NULL;
@@ -312,84 +312,84 @@ public:
 
 class bsp
 {
-  public:
-    bsp(void);
-    ~bsp(void);
+public:
+  bsp(void);
+  ~bsp(void);
 
-    bsp(std::string filename);
+  bsp(std::string filename);
 
-    int find_leaf(const vec3f& camera_position);
-    void get_visible_faces(const vec3f& camera_position);
+  int find_leaf(const vec3f& camera_position);
+  void get_visible_faces(const vec3f& camera_position);
 
-    void render(const vec3f& camera_position, float time);
-    bool is_cluster_visible(int cluster, int test_cluster);
-    void render_face(bsp_face* face);
+  void render(const vec3f& camera_position, float time);
+  bool is_cluster_visible(int cluster, int test_cluster);
+  void render_face(bsp_face* face);
 
-    void load_shaders();
-    int parse_shader_stage(const std::string* shader, int offset, q3_shader_stage* stage);
-    std::map<std::string, q3_shader*> m_shaders;
+  void load_shaders();
+  int parse_shader_stage(const std::string* shader, int offset, q3_shader_stage* stage);
+  std::map<std::string, q3_shader*> m_shaders;
 
-    void load_lightmaps();
-    void prepare_shader(q3_shader& shader, int offset, int lmindex);
-    void end_shader(const q3_shader& shader);
+  void load_lightmaps();
+  void prepare_shader(q3_shader& shader, int offset, int lmindex);
+  void end_shader(const q3_shader& shader);
 
 
-    float trace(vec3f& start, vec3f& end);
-    void check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end);
-    void check_brush(const bsp_brush& brush, vec3f start, vec3f end);
+  float trace(vec3f& start, vec3f& end);
+  void check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end);
+  void check_brush(const bsp_brush& brush, vec3f start, vec3f end);
 
-    std::bitset<10000> m_already_visible;
-    std::map<bsp_face*, std::vector<bezier*> > m_patches;
-    std::vector<bsp_face*> m_opaque_faces;
-    std::vector<bsp_face*> m_translucent_faces;
+  std::bitset<10000> m_already_visible;
+  std::map<bsp_face*, std::vector<bezier*> > m_patches;
+  std::vector<bsp_face*> m_opaque_faces;
+  std::vector<bsp_face*> m_translucent_faces;
 
-    GLuint* lightmaps_;
-    GLuint vboId;
-    GLuint iboId;
+  GLuint* lightmaps_;
+  GLuint vboId;
+  GLuint iboId;
 
-    float m_time;
+  float m_time;
 
-    // some status variables for outputting info
-    int m_num_cluster_not_visible;
-    int m_num_not_in_frustum;
-    int m_num_skipped_faces;
-    int m_num_skipped_shaders;
+  // some status variables for outputting info
+  int m_num_cluster_not_visible;
+  int m_num_not_in_frustum;
+  int m_num_skipped_faces;
+  int m_num_skipped_shaders;
 
-    int m_num_entities;
-    int m_num_textures;
-    int m_num_planes;
-    int m_num_nodes;
-    int m_num_leafs;
-    int m_num_leaffaces;
-    int m_num_leafbrushes;
-    int m_num_models;
-    int m_num_brushes;
-    int m_num_brushsides;
-    int m_num_vertexes;
-    int m_num_meshverts;
-    int m_num_effects;
-    int m_num_faces;
-    int m_num_lightmaps;
-    int m_num_lightvols;
+  int m_num_entities;
+  int m_num_textures;
+  int m_num_planes;
+  int m_num_nodes;
+  int m_num_leafs;
+  int m_num_leaffaces;
+  int m_num_leafbrushes;
+  int m_num_models;
+  int m_num_brushes;
+  int m_num_brushsides;
+  int m_num_vertexes;
+  int m_num_meshverts;
+  int m_num_effects;
+  int m_num_faces;
+  int m_num_lightmaps;
+  int m_num_lightvols;
 
-    bsp_header m_header;
-    bsp_entities* m_entities;
-    bsp_texture* m_textures;
-    bsp_plane* m_planes;
-    bsp_node* m_nodes;
-    bsp_leaf* m_leafs;
-    bsp_leafface* m_leaffaces;
-    bsp_leafbrush* m_leafbrushes;
-    bsp_model* m_models;
-    bsp_brush* m_brushes;
-    bsp_brushside* m_brushsides;
-    bsp_vertex* m_vertexes;
-    bsp_meshvert* m_meshverts;
-    bsp_effect* m_effects;
-    bsp_face* m_faces;
-    bsp_lightmap* m_lightmaps;
-    bsp_lightvol* m_lightvols;
-    bsp_visdata* m_visdata;
+  bsp_header m_header;
+  bsp_entities* m_entities;
+  bsp_texture* m_textures;
+  bsp_plane* m_planes;
+  bsp_node* m_nodes;
+  bsp_leaf* m_leafs;
+  bsp_leafface* m_leaffaces;
+  bsp_leafbrush* m_leafbrushes;
+  bsp_model* m_models;
+  bsp_brush* m_brushes;
+  bsp_brushside* m_brushsides;
+  bsp_vertex* m_vertexes;
+  bsp_meshvert* m_meshverts;
+  bsp_effect* m_effects;
+  bsp_face* m_faces;
+  bsp_lightmap* m_lightmaps;
+  bsp_lightvol* m_lightvols;
+  bsp_visdata* m_visdata;
 };
 
 #endif /* _BSP_H_ */ 

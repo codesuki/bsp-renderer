@@ -124,21 +124,21 @@ mat4f camera::GetMatrix()
 
   identity(matrix);
   
-  matrix[0][0] = right_[0];
-  matrix[0][1] = right_[1];
-  matrix[0][2] = right_[2];
+  matrix[(size_t)0][(size_t)0] = right_[(size_t)0];
+  matrix[(size_t)0][(size_t)1] = right_[(size_t)1];
+  matrix[(size_t)0][(size_t)2] = right_[(size_t)2];
 
-  matrix[1][0] = up_[0];
-  matrix[1][1] = up_[1];
-  matrix[1][2] = up_[2];
+  matrix[(size_t)1][(size_t)0] = up_[(size_t)0];
+  matrix[(size_t)1][(size_t)1] = up_[(size_t)1];
+  matrix[(size_t)1][(size_t)2] = up_[(size_t)2];
 
-  matrix[2][0] = look_[0];
-  matrix[2][1] = look_[1];
-  matrix[2][2] = look_[2];
+  matrix[(size_t)2][(size_t)0] = look_[(size_t)0];
+  matrix[(size_t)2][(size_t)1] = look_[(size_t)1];
+  matrix[(size_t)2][(size_t)2] = look_[(size_t)2];
                      
-  matrix[0][3] = -position_.dot(right_);
-  matrix[1][3] = -position_.dot(up_);
-  matrix[2][3] = -position_.dot(look_);
+  matrix[(size_t)0][(size_t)3] = -position_.dot(right_);
+  matrix[(size_t)1][(size_t)3] = -position_.dot(up_);
+  matrix[(size_t)2][(size_t)3] = -position_.dot(look_);
    
  /* 
   matrix[0][0] = right_[0];
