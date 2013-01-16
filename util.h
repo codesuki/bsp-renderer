@@ -11,8 +11,10 @@
 #include <string>
 #include <sstream>
 
-#include "vmmlib/vmmlib.hpp"
-using namespace vmml;
+#define GLM_FORCE_RADIANS
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtc/type_ptr.hpp> 
 
 #define strcasecmp _stricmp
 
@@ -50,5 +52,7 @@ static const GLfloat quake2oglMatrix[16] =
 -1, 0, 0, 0,
 0, 1, 0, 0,
 0, 0, 0, 1};
+
+static const glm::mat4 quake2ogl(0.0, 0.0, -1.0, 0.0, -1.0,  0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
 #endif

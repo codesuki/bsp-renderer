@@ -927,7 +927,7 @@ int bsp::parse_shader_stage(const std::string* shaders, int offset, q3_shader_st
   return i;
 }
 
-int bsp::find_leaf(const vec3f& camera_position)
+int bsp::find_leaf(const glm::vec4& camera_position)
 {
   int index = 0;
 
@@ -941,26 +941,7 @@ int bsp::find_leaf(const vec3f& camera_position)
 
     // Distance from point to a plane
 
-    mat4f transform_matrix;
-    vec3f transformed_vector = plane.normal;
-
-    mat4f inverse_matrix;
-
-    transform_matrix = quake2oglMatrix;
-    /*compute_inverse(transform_matrix, inverse_matrix);
-    transform_matrix = transpose(inverse_matrix);
-
-    transformed_vector = transform_matrix * transformed_vector;
-
-    bsp_plane transformed_plane;
-    transformed_plane.normal = transformed_vector;
-
-    bsp_plane test_plane = plane;
-    float temp = test_plane.normal[1];
-    test_plane.normal[1] = test_plane.normal[2];
-    test_plane.normal[2] = -temp;
-    */
-    vec3f pos = transform_matrix * camera_position;
+    glm::vec4 pos = quake2ogl * camera_position;
 
     /*  if (plane.type < 3) // type < 3 -> axial plane
     {
@@ -968,8 +949,7 @@ int bsp::find_leaf(const vec3f& camera_position)
     }
     else
     */  
-    const float distance = plane.normal.dot(pos) - plane.distance;
-
+    const float distance = glm::dot(glm::vec4(plane.normal, 0.0f), pos) - plane.distance;
 
     if (distance >= 0) 
     {
@@ -995,7 +975,7 @@ bool bsp::is_cluster_visible(int cluster, int test_cluster)
   return true;
 }
 
-void bsp::get_visible_faces(const vec3f& camera_position)
+void bsp::get_visible_faces(const glm::vec4& camera_position)
 {
   m_opaque_faces.clear();
   m_translucent_faces.clear();
@@ -1020,15 +1000,18 @@ void bsp::get_visible_faces(const vec3f& camera_position)
       continue;
     }
 
-    vec3f min = vec3f((-1)*m_leafs[i].mins[2], (-1)*m_leafs[i].mins[0], m_leafs[i].mins[1]);
-    vec3f max = vec3f((-1)*m_leafs[i].maxs[2], (-1)*m_leafs[i].maxs[0], m_leafs[i].maxs[1]);
+    glm::vec3 min((-1)*m_leafs[i].mins[2], (-1)*m_leafs[i].mins[0], m_leafs[i].mins[1]);
+    glm::vec3 max((-1)*m_leafs[i].maxs[2], (-1)*m_leafs[i].maxs[0], m_leafs[i].maxs[1]);
+    
+    min = glm::vec3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]);
+    max = glm::vec3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]);
 
-    /* if (!g_frustum.box_in_frustum(min, max)) 
+    //if (!g_frustum.box_in_frustum(min, max)) 
     {
-    ++m_num_not_in_frustum;
-    continue;
-    }
-    */
+      //++m_num_not_in_frustum;
+      //continue;
+    } 
+    
     for (int j = m_leafs[i].leafface+m_leafs[i].num_leaffaces-1; j >= m_leafs[i].leafface; --j) 
     {
       int face = m_leaffaces[j].face;
@@ -1054,7 +1037,7 @@ void bsp::get_visible_faces(const vec3f& camera_position)
 
   //std::cout << "current leaf index: " << leafindex << std::endl;
   //std::cout << "current cluster: " << cluster << std::endl;
-  //std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
+  std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
   //std::cout << "skipped faces:  " << m_num_skipped_faces << std::endl;
   //std::cout << "total faces:    " << m_num_faces << std::endl;
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
@@ -1071,12 +1054,10 @@ bool faceSort(const bsp_face* left, const bsp_face* right)
   return false;
 }
 
-void bsp::render(const vec3f& camera_position, float time)
+void bsp::render(const glm::vec4& camera_position, float time)
 {
   get_visible_faces(camera_position);
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
-
-  std::map<std::string, q3_shader*>::iterator it;
 
   for (int i = 0; i < m_opaque_faces.size(); ++i) 
   {
@@ -1296,6 +1277,9 @@ void bsp::prepare_shader(q3_shader& shader, int offset, int lm_index)
   } 
 }
 
+extern glm::mat4 projectionmatrix;
+extern glm::mat4 modelmatrix;
+
 void bsp::render_face(bsp_face* face)
 {
   const bsp_face &current_face = *face;
@@ -1321,6 +1305,9 @@ void bsp::render_face(bsp_face* face)
   {
     glUniform1f(shader.time_idx, m_time);   
   } 
+
+  glUniformMatrix4fv(shader.projection_idx, 1, false, glm::value_ptr(projectionmatrix));
+  glUniformMatrix4fv(shader.model_idx, 1, false, glm::value_ptr(modelmatrix));
 #endif
 
   if (face->type == POLYGON || face->type == MESH) 
@@ -1332,10 +1319,10 @@ void bsp::render_face(bsp_face* face)
       BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
 
     glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-      BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(vec3f)));
+      BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)));
 
     glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-      BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(vec3f)+sizeof(vec2f)));
+      BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
     glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
       BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));    
@@ -1394,10 +1381,10 @@ void bsp::render_face(bsp_face* face)
         BUFFER_OFFSET(b->m_vertex_offset));
 
       glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-        BUFFER_OFFSET(b->m_vertex_offset+sizeof(vec3f)));
+        BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
 
       glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-        BUFFER_OFFSET(b->m_vertex_offset+sizeof(vec3f)+sizeof(vec2f)));
+        BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
       glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
         BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
@@ -1433,6 +1420,8 @@ void q3_shader::compile()
 
   std::stringstream vertex_shader;
   vertex_shader << "#version 130\n" 
+    << "uniform mat4 inProjectionMatrix;\n"
+    << "uniform mat4 inModelMatrix;\n"
     << "uniform float inTime;\n" 
     << "in vec4 inPosition;\n" 
     << "in vec2 inTexCoord;\n"
@@ -1451,7 +1440,7 @@ void q3_shader::compile()
   vertex_shader << "void main() {\n"
     << "\toutLmCoord = inLmCoord;\n"
     << "\toutColor = inColor;\n"
-    << "\tgl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * inPosition;\n";
+    << "\tgl_Position = inProjectionMatrix * inModelMatrix * inPosition;\n";
 
   for (int i = 0; i < stages.size(); ++i)
   {
@@ -1741,6 +1730,8 @@ void q3_shader::compile()
   texture_idx[6] = glGetUniformLocation(shader, "texture6"); 
   texture_idx[7] = glGetUniformLocation(shader, "texture7"); 
 
+  projection_idx = glGetUniformLocation(shader, "inProjectionMatrix");
+  model_idx = glGetUniformLocation(shader, "inModelMatrix");
   time_idx = glGetUniformLocation(shader, "inTime");
 
   position_idx = glGetAttribLocation(shader, "inPosition");
@@ -1824,7 +1815,7 @@ bool output_starts_out;
 bool output_all_solid;
 float output_fraction;
 
-float bsp::trace(vec3f& start, vec3f& end)
+float bsp::trace(glm::vec4& start, glm::vec4& end)
 {
   output_starts_out = true;
   output_all_solid = false;
@@ -1844,7 +1835,7 @@ float bsp::trace(vec3f& start, vec3f& end)
   }
 }
 
-void bsp::check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end)
+void bsp::check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end)
 {
   if (index < 0)
   {
@@ -1866,8 +1857,10 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, vec3f 
   const bsp_node& node = m_nodes[index];
   const bsp_plane& plane = m_planes[node.plane];
 
-  const float start_distance = plane.normal.dot(start) - plane.distance;
-  const float end_distance = plane.normal.dot(end) - plane.distance;
+  glm::vec4 normal(plane.normal, 0.0f);
+
+  const float start_distance = glm::dot(normal, start) - plane.distance;
+  const float end_distance = glm::dot(normal, end) - plane.distance;
 
   if (start_distance >= 0 && end_distance >= 0) // both in front of plane 
   {
@@ -1881,7 +1874,7 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, vec3f 
   {
     int side;
     float fraction1, fraction2, middle_fraction;
-    vec3f middle;
+    glm::vec4 middle;
 
     if (start_distance < end_distance)
     {
@@ -1921,7 +1914,7 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, vec3f 
   }
 }       
 
-void bsp::check_brush(const bsp_brush& brush, vec3f start, vec3f end)
+void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
 {
   float start_fraction = -1.0f;
   float end_fraction = 1.0f;
@@ -1933,8 +1926,10 @@ void bsp::check_brush(const bsp_brush& brush, vec3f start, vec3f end)
     bsp_brushside& brushside = m_brushsides[brush.brushside + i];
     bsp_plane& plane = m_planes[brushside.plane];
 
-    const float start_distance = plane.normal.dot(start) - plane.distance;
-    const float end_distance = plane.normal.dot(end) - plane.distance; 
+    glm::vec4 normal(plane.normal, 0.0);
+
+    const float start_distance = glm::dot(normal, start) - plane.distance;
+    const float end_distance = glm::dot(normal, end) - plane.distance; 
 
     if (start_distance > 0)
     {

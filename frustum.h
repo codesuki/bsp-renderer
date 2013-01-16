@@ -9,10 +9,10 @@ public:
 	myfrustum(void);
 	~myfrustum(void);
 
-	void extract_planes(mat4f& viewMatrix, mat4f& projectionMatrix);
-	bool box_in_frustum(vec3f& min, vec3f& max);
+	void extract_planes(glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
+	bool box_in_frustum(glm::vec3& min, glm::vec3& max);
 
-	vec4f m_planes[6];
+	glm::vec4 m_planes[6];
 };
 
 #endif
