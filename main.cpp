@@ -110,22 +110,16 @@ int main(int argc, char **argv)
     SDL_WarpMouse(400, 300);
     float rx = ((((float)x)-400.f)/100.f);
     float ry = ((((float)y)-300.f)/100.f);
-
-    if (rx != 0 || ry != 0)
-    {  
-      g_cam.pitch(-ry);
-      g_cam.yaw(-rx);
-    }
+ 
+    g_cam.pitch(ry);
+    g_cam.yaw(rx);
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    modelmatrix = glm::mat4(1.0f);
-    modelmatrix *= g_cam.GetMatrix();
+    modelmatrix = g_cam.GetMatrix();
     modelmatrix *= quake2ogl;
-
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     //g_frustum.extract_planes(mm, pm);
 
