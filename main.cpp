@@ -7,6 +7,9 @@
 #define WIDTH 1280
 #define HEIGHT 720
 
+glm::mat4 modelmatrix;
+glm::mat4 projectionmatrix;
+
 myfrustum g_frustum;
 bool g_noclip = true;
 
@@ -33,15 +36,14 @@ int main(int argc, char **argv)
   } 
   Logger::Log(Logger::ERROR, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
-
-  vec3f vEyePt( -10.0, 10.0, 20.0 );
+  glm::vec4 vEyePt( -10.0f, 10.0f, 20.0f, 1.0f );
 
   SDL_WarpMouse(WIDTH/2, HEIGHT/2);
+  SDL_ShowCursor(SDL_DISABLE);
 
   bsp *map = new bsp("maps\\q3dm6.bsp");
 
-
-  camera g_cam(&vEyePt, map);
+  camera g_cam(vEyePt, map);
 
   glEnable(GL_DEPTH_TEST); 
   glDisable(GL_LIGHTING);
@@ -55,11 +57,8 @@ int main(int argc, char **argv)
 #endif
 
   glViewport(0, 0, WIDTH, HEIGHT);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPerspective(90, (float)WIDTH/HEIGHT, 1, 10000);
 
-  glMatrixMode(GL_MODELVIEW);
+  projectionmatrix = glm::perspective(90.0f, (float)WIDTH/(float)HEIGHT, 1.0f, 10000.f);
 
   unsigned int ticks = 0;   
   unsigned int delta = 0;
@@ -120,22 +119,15 @@ int main(int argc, char **argv)
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
 
-    glLoadIdentity(); // Reset orientation               
-
-    glMultMatrixf(g_cam.GetMatrix());
-    glMultMatrixf(quake2oglMatrix);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    mat4f mm, pm;
-    float m[16], p[16];
+    modelmatrix = glm::mat4(1.0f);
+    modelmatrix *= g_cam.GetMatrix();
+    modelmatrix *= quake2ogl;
 
-    glGetFloatv(GL_MODELVIEW_MATRIX, m); 
-    glGetFloatv(GL_PROJECTION_MATRIX, p);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    mm = m;
-    pm = p;
-
-    g_frustum.extract_planes(mm, pm);
+    //g_frustum.extract_planes(mm, pm);
 
     // Graphical commands go here
     map->render(g_cam.position_, ((float)ticks)/1000.0f);
@@ -144,7 +136,7 @@ int main(int argc, char **argv)
     //if (delta != 0)	
     //  std::cout << "frametime in ms: " << delta << " fps: " << 1000 / delta << std::endl;  
 
-    SDL_ShowCursor(SDL_DISABLE);
+    
   }
 
   IMG_Quit();

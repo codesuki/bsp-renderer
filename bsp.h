@@ -57,7 +57,7 @@ struct bsp_texture {
 };
 
 struct bsp_plane {
-  vec3f normal;
+  glm::vec3 normal;
   float distance;
 };
 
@@ -111,10 +111,10 @@ struct bsp_brushside {
 // maybe wrong? -> q3 source
 class bsp_vertex {
 public:
-  vec3f position;
-  vec2f texcoord;
-  vec2f lmcoord;
-  vec3f normal;
+  glm::vec3 position;
+  glm::vec2 texcoord;
+  glm::vec2 lmcoord;
+  glm::vec3 normal;
   unsigned char color[4];
 
   /**
@@ -170,9 +170,9 @@ struct bsp_face {
   int lm_index;
   int lm_start[2];
   int lm_size[2];
-  vec3f lm_origin;
-  vec3f lm_vecs[2];
-  vec3f normal;
+  glm::vec3 lm_origin;
+  glm::vec3 lm_vecs[2];
+  glm::vec3 normal;
   int size[2];
 };
 
@@ -308,6 +308,8 @@ public:
   int lm_coord_idx;
   int color_idx;
   int time_idx;
+  int projection_idx;
+  int model_idx;
 };
 
 class bsp
@@ -318,10 +320,10 @@ public:
 
   bsp(std::string filename);
 
-  int find_leaf(const vec3f& camera_position);
-  void get_visible_faces(const vec3f& camera_position);
+  int find_leaf(const glm::vec4& camera_position);
+  void get_visible_faces(const glm::vec4& camera_position);
 
-  void render(const vec3f& camera_position, float time);
+  void render(const glm::vec4& camera_position, float time);
   bool is_cluster_visible(int cluster, int test_cluster);
   void render_face(bsp_face* face);
 
@@ -334,9 +336,9 @@ public:
   void end_shader(const q3_shader& shader);
 
 
-  float trace(vec3f& start, vec3f& end);
-  void check_node(int index, float start_fraction, float end_fraction, vec3f start, vec3f end);
-  void check_brush(const bsp_brush& brush, vec3f start, vec3f end);
+  float trace(glm::vec4& start, glm::vec4& end);
+  void check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end);
+  void check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end);
 
   std::bitset<10000> m_already_visible;
   std::map<bsp_face*, std::vector<bezier*> > m_patches;
