@@ -941,7 +941,7 @@ int bsp::find_leaf(const glm::vec4& camera_position)
 
     // Distance from point to a plane
 
-    glm::vec4 pos = quake2ogl * camera_position;
+    glm::vec4 pos = camera_position * quake2ogl;
 
     /*  if (plane.type < 3) // type < 3 -> axial plane
     {
@@ -949,7 +949,7 @@ int bsp::find_leaf(const glm::vec4& camera_position)
     }
     else
     */  
-    const float distance = glm::dot(glm::vec4(plane.normal, 0.0f), pos) - plane.distance;
+    const float distance = glm::dot(plane.normal, glm::vec3(pos)) - plane.distance;
 
     if (distance >= 0) 
     {
@@ -1006,9 +1006,9 @@ void bsp::get_visible_faces(const glm::vec4& camera_position)
     min = glm::vec3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]);
     max = glm::vec3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]);
 
-    //if (!g_frustum.box_in_frustum(min, max)) 
+    if (!g_frustum.box_in_frustum(min, max)) 
     {
-      //++m_num_not_in_frustum;
+      ++m_num_not_in_frustum;
       //continue;
     } 
     
@@ -1038,6 +1038,7 @@ void bsp::get_visible_faces(const glm::vec4& camera_position)
   //std::cout << "current leaf index: " << leafindex << std::endl;
   //std::cout << "current cluster: " << cluster << std::endl;
   std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
+  std::cout << "not in frustum: " << m_num_not_in_frustum << std::endl;
   //std::cout << "skipped faces:  " << m_num_skipped_faces << std::endl;
   //std::cout << "total faces:    " << m_num_faces << std::endl;
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;

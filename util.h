@@ -14,7 +14,8 @@
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include <glm/gtc/type_ptr.hpp> 
+#include "glm/gtc/matrix_access.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #define strcasecmp _stricmp
 
@@ -53,6 +54,7 @@ static const GLfloat quake2oglMatrix[16] =
 0, 1, 0, 0,
 0, 0, 0, 1};
 
+//static const glm::mat4 quake2ogl(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 static const glm::mat4 quake2ogl(0.0, 0.0, -1.0, 0.0, -1.0,  0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
 #endif

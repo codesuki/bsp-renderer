@@ -19,8 +19,8 @@ void camera::move(float dir)
   {
     glm::vec4 wish_position = position_ + look_ * dir;
 
-    glm::vec4 end = quake2ogl * wish_position;
-    glm::vec4 start = quake2ogl * position_;
+    glm::vec4 end = wish_position * quake2ogl;
+    glm::vec4 start = position_ * quake2ogl;
 
     //std::cout << "wishpos before: " << wish_position << std::endl;
     float fraction = map_->trace(start, end);
@@ -45,8 +45,8 @@ void camera::strafe(float dir)
   {  
     glm::vec4 wish_position = position_ + right_ * dir;  
     
-    glm::vec4 end = quake2ogl * wish_position;
-    glm::vec4 start = quake2ogl * position_;
+    glm::vec4 end = wish_position * quake2ogl;
+    glm::vec4 start = position_ * quake2ogl;
 
     //std::cout << "wishpos before: " << wish_position << std::endl;
     float fraction = map_->trace(start, end);
@@ -97,14 +97,14 @@ glm::mat4 camera::GetMatrix()
 
   matrix = glm::rotate(matrix, yaw_, glm::vec3(up_));
 
-  right_ = matrix * right_;
-  look_ = matrix * look_;
+  right_ = right_ * matrix;
+  look_ = look_ * matrix;
 
   matrix = glm::mat4(1.0f);
   matrix = glm::rotate(matrix, pitch_, glm::vec3(right_));
 
-  look_ = matrix * look_;
-  up_ = matrix * up_;
+  look_ = look_ * matrix;
+  up_ = up_ * matrix;
 
   return glm::mat4(right_.x, up_.x, look_.x, 0.0f, 
     right_.y, up_.y, look_.y, 0.0f,
