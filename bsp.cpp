@@ -1,11 +1,12 @@
 #include "bsp.h"
+
+#include "boost/filesystem.hpp"
+
 #include "util.h"
 #include "texture.h"
 #include "bezier.h"
 #include "frustum.h"
 #include "Logger.h"
-
-#include "boost/filesystem.hpp"
 
 extern myfrustum g_frustum;
 
@@ -1000,11 +1001,8 @@ void bsp::get_visible_faces(const glm::vec4& camera_position)
       continue;
     }
 
-    glm::vec3 min((-1)*m_leafs[i].mins[2], (-1)*m_leafs[i].mins[0], m_leafs[i].mins[1]);
-    glm::vec3 max((-1)*m_leafs[i].maxs[2], (-1)*m_leafs[i].maxs[0], m_leafs[i].maxs[1]);
-    
-    min = glm::vec3(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]);
-    max = glm::vec3(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]);
+    glm::vec3 min(m_leafs[i].mins[0], m_leafs[i].mins[1], m_leafs[i].mins[2]);
+    glm::vec3 max(m_leafs[i].maxs[0], m_leafs[i].maxs[1], m_leafs[i].maxs[2]);
 
     if (!g_frustum.box_in_frustum(min, max)) 
     {
@@ -1309,6 +1307,13 @@ void bsp::render_face(bsp_face* face)
 
   glUniformMatrix4fv(shader.projection_idx, 1, false, glm::value_ptr(projectionmatrix));
   glUniformMatrix4fv(shader.model_idx, 1, false, glm::value_ptr(modelmatrix));
+
+  glEnableVertexAttribArray(2);
+#endif
+
+#ifdef __USE_VBO__
+  glBindBuffer(GL_ARRAY_BUFFER, vboId);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
 #endif
 
   if (face->type == POLYGON || face->type == MESH) 
@@ -1720,6 +1725,7 @@ void q3_shader::compile()
 
   shader = CreateProgram(shaders);
 
+  // maybe this one should be done before linking in createprogram() but cant find any difference. (maybe because only one is used atm)
   glBindFragDataLocation(shader, 0, "fragColor"); 
 
   texture_idx[0] = glGetUniformLocation(shader, "texture0"); 
@@ -1815,6 +1821,7 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList)
 bool output_starts_out;
 bool output_all_solid;
 float output_fraction;
+  float trace_radius = 100.0f;
 
 float bsp::trace(glm::vec4& start, glm::vec4& end)
 {
@@ -1863,11 +1870,13 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
   const float start_distance = glm::dot(normal, start) - plane.distance;
   const float end_distance = glm::dot(normal, end) - plane.distance;
 
-  if (start_distance >= 0 && end_distance >= 0) // both in front of plane 
+  float offset = trace_radius;
+
+  if (start_distance >= offset && end_distance >= offset) // both in front of plane 
   {
     check_node(node.front, start_fraction, end_fraction, start, end);
   } 
-  else if (start_distance < 0 && end_distance < 0) // both behind the plane
+  else if (start_distance < -offset && end_distance < -offset) // both behind the plane
   {
     check_node(node.back, start_fraction, end_fraction, start, end);
   }
@@ -1881,14 +1890,15 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
     {
       side = 1;
       float inverse_distance = 1.0f / (start_distance - end_distance);
-      fraction1 = fraction2 = (start_distance + EPSILON) * inverse_distance;
+      fraction1 = (start_distance - offset + EPSILON) * inverse_distance;
+      fraction2 = (start_distance + offset + EPSILON) * inverse_distance;
     }
     else if (end_distance < start_distance)
     {
       side = 0;
       float inverse_distance = 1.0f / (start_distance - end_distance);
-      fraction1 = (start_distance + EPSILON) * inverse_distance;
-      fraction2 = (start_distance - EPSILON) * inverse_distance;
+      fraction1 = (start_distance + offset + EPSILON) * inverse_distance;
+      fraction2 = (start_distance - offset - EPSILON) * inverse_distance;
     }
     else
     {
@@ -1929,8 +1939,11 @@ void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
 
     glm::vec4 normal(plane.normal, 0.0);
 
-    const float start_distance = glm::dot(normal, start) - plane.distance;
-    const float end_distance = glm::dot(normal, end) - plane.distance; 
+    //const float start_distance = glm::dot(normal, start) - plane.distance;
+    //const float end_distance = glm::dot(normal, end) - plane.distance; 
+
+    const float start_distance = glm::dot(normal, start) - (plane.distance + trace_radius);
+    const float end_distance = glm::dot(normal, end) - (plane.distance + trace_radius); 
 
     if (start_distance > 0)
     {
