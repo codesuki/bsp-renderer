@@ -50,7 +50,7 @@ void camera::strafe(float dir)
 
     //std::cout << "wishpos before: " << wish_position << std::endl;
     float fraction = map_->trace(start, end);
-    if (fraction != 1)
+    if (fraction != 1.0)
     { 
       //std::cout << "wishpos after: " << wish_position * fraction << " fraction: " << fraction << std::endl;
       return;

@@ -3,15 +3,19 @@
 #include "camera.h"
 #include "frustum.h"
 #include "Logger.h"
+#include "Font.h"
 
 #define WIDTH 1280
 #define HEIGHT 720
 
 glm::mat4 modelmatrix;
 glm::mat4 projectionmatrix;
+glm::mat4 orthomatrix;
 
 myfrustum g_frustum;
 bool g_noclip = true;
+
+Font font;
 
 int main(int argc, char **argv)
 {
@@ -41,6 +45,8 @@ int main(int argc, char **argv)
   SDL_WarpMouse(WIDTH/2, HEIGHT/2);
   SDL_ShowCursor(SDL_DISABLE);
 
+  font.LoadFont("gfx\\2d\\bigchars.tga");
+
   bsp *map = new bsp("maps\\q3dm6.bsp");
 
   camera g_cam(vEyePt, map);
@@ -59,6 +65,7 @@ int main(int argc, char **argv)
   glViewport(0, 0, WIDTH, HEIGHT);
 
   projectionmatrix = glm::perspective(90.0f, (float)WIDTH/(float)HEIGHT, 1.0f, 10000.f);
+  orthomatrix = glm::ortho(0.0f, (float)WIDTH, 0.0f, (float)HEIGHT, -1.0f, 1.0f);
 
   unsigned int ticks = 0;   
   unsigned int delta = 0;
@@ -121,10 +128,16 @@ int main(int argc, char **argv)
     modelmatrix = g_cam.GetMatrix();
     modelmatrix *= quake2ogl;
 
-    //g_frustum.extract_planes(mm, pm);
+    g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
     // Graphical commands go here
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     map->render(g_cam.position_, ((float)ticks)/1000.0f);
+    glDisable(GL_CULL_FACE);
+    font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
+
     SDL_GL_SwapBuffers();
 
     //if (delta != 0)	
