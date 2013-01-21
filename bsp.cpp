@@ -1035,8 +1035,8 @@ void bsp::get_visible_faces(const glm::vec4& camera_position)
 
   //std::cout << "current leaf index: " << leafindex << std::endl;
   //std::cout << "current cluster: " << cluster << std::endl;
-  std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
-  std::cout << "not in frustum: " << m_num_not_in_frustum << std::endl;
+  //std::cout << "not in cluster: " << m_num_cluster_not_visible << std::endl;
+  //std::cout << "not in frustum: " << m_num_not_in_frustum << std::endl;
   //std::cout << "skipped faces:  " << m_num_skipped_faces << std::endl;
   //std::cout << "total faces:    " << m_num_faces << std::endl;
   //std::cout << "visible faces: " << m_opaque_faces.size() << std::endl;
@@ -1057,6 +1057,12 @@ void bsp::render(const glm::vec4& camera_position, float time)
 {
   get_visible_faces(camera_position);
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
+
+#ifdef __USE_VBO__
+  glBindBuffer(GL_ARRAY_BUFFER, vboId);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
+  glEnableVertexAttribArray(2);
+#endif
 
   for (int i = 0; i < m_opaque_faces.size(); ++i) 
   {
@@ -1298,8 +1304,8 @@ void bsp::render_face(bsp_face* face)
   {
     glUseProgram(shader.shader);
     current_shader = shader.shader;
-  }  
 
+    
   if (shader.time_idx != -1)
   {
     glUniform1f(shader.time_idx, m_time);   
@@ -1307,14 +1313,13 @@ void bsp::render_face(bsp_face* face)
 
   glUniformMatrix4fv(shader.projection_idx, 1, false, glm::value_ptr(projectionmatrix));
   glUniformMatrix4fv(shader.model_idx, 1, false, glm::value_ptr(modelmatrix));
+  }  
 
-  glEnableVertexAttribArray(2);
+
+  
 #endif
 
-#ifdef __USE_VBO__
-  glBindBuffer(GL_ARRAY_BUFFER, vboId);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
-#endif
+
 
   if (face->type == POLYGON || face->type == MESH) 
   {  
@@ -1821,7 +1826,7 @@ GLuint CreateProgram(const std::vector<GLuint> &shaderList)
 bool output_starts_out;
 bool output_all_solid;
 float output_fraction;
-  float trace_radius = 100.0f;
+float trace_radius = 20.0f;
 
 float bsp::trace(glm::vec4& start, glm::vec4& end)
 {
@@ -1853,7 +1858,7 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
     {
       const bsp_brush& brush = m_brushes[m_leafbrushes[leaf.leafbrush + i].brush];
 
-      if (brush.num_brushsides > 0 && m_textures[brush.texture].contents & 1)
+      if (brush.num_brushsides > 0 && m_textures[brush.texture].contents & 1) // 1 == CONTENTS_SOLID
       {
         check_brush(brush, start, end);
       }
@@ -1907,6 +1912,9 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
       fraction2 = 0.0f;
     }
 
+    if (fraction1 < 0.0f) fraction1 = 0.0f;
+    if (fraction1 > 1.0f) fraction1 = 1.0f;
+
     middle_fraction = start_fraction + (end_fraction - start_fraction) * fraction1;
     middle = start + fraction1 * (end - start);
 
@@ -1914,6 +1922,9 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
       check_node(node.front, start_fraction, middle_fraction, start, middle);
     else
       check_node(node.back, start_fraction, middle_fraction, start, middle);
+
+    if (fraction2 < 0.0f) fraction2 = 0.0f;
+    if (fraction2 > 1.0f) fraction2 = 1.0f;
 
     middle_fraction = start_fraction + (end_fraction - start_fraction) * fraction2;
     middle = start + fraction2 * (end - start);
@@ -1956,16 +1967,19 @@ void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
 
     if (start_distance > 0 && end_distance > 0) // both in front of plane 
     {
-      continue;
+      return;
     } 
     else if (start_distance <= 0 && end_distance <= 0) // both behind the plane
     {
       continue;
     }
 
-    if (start_distance < end_distance)
+    if (start_distance > end_distance)
     {
       float fraction = (start_distance - EPSILON) / (start_distance - end_distance);
+
+      if (fraction < 0.0f) fraction = 0.0f;
+
       if (fraction > start_fraction)
       {
         start_fraction = fraction;
@@ -1974,6 +1988,9 @@ void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
     else
     {
       float fraction = (start_distance + EPSILON) / (start_distance - end_distance);
+      
+      if (fraction > 1.0f) fraction = 1.0f;
+      
       if (fraction < end_fraction)
       {
         end_fraction = fraction;
@@ -1987,7 +2004,9 @@ void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
     if (ends_out == false)
     {
       output_all_solid = true;
+      output_fraction = 0.0f;
     }
+    return;
   }
 
   if (start_fraction < end_fraction)
