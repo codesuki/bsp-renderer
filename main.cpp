@@ -126,9 +126,8 @@ int main(int argc, char **argv)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     modelmatrix = g_cam.GetMatrix();
+        g_frustum.extract_planes(modelmatrix, projectionmatrix);
     modelmatrix *= quake2ogl;
-
-    g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
     // Graphical commands go here
     glEnable(GL_CULL_FACE);
@@ -138,12 +137,14 @@ int main(int argc, char **argv)
     glDisable(GL_CULL_FACE);
     font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
 
+    if (delta != 0)	
+    {
+      std::stringstream fps;
+      fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
+      font.PrintString(fps.str(), glm::vec2(10.0f, (float)HEIGHT-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
+    }
+
     SDL_GL_SwapBuffers();
-
-    //if (delta != 0)	
-    //  std::cout << "frametime in ms: " << delta << " fps: " << 1000 / delta << std::endl;  
-
-    
   }
 
   IMG_Quit();

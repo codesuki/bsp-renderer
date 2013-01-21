@@ -22,13 +22,7 @@ void camera::move(float dir)
     glm::vec4 end = wish_position * quake2ogl;
     glm::vec4 start = position_ * quake2ogl;
 
-    //std::cout << "wishpos before: " << wish_position << std::endl;
     float fraction = map_->trace(start, end);
-    if (fraction != 1)
-    {
-      //std::cout << "wishpos after: " << wish_position * fraction << " fraction: " << fraction << std::endl;
-      return;
-    }
     position_ += look_ * dir * fraction;
   }
   else
@@ -48,13 +42,7 @@ void camera::strafe(float dir)
     glm::vec4 end = wish_position * quake2ogl;
     glm::vec4 start = position_ * quake2ogl;
 
-    //std::cout << "wishpos before: " << wish_position << std::endl;
     float fraction = map_->trace(start, end);
-    if (fraction != 1.0)
-    { 
-      //std::cout << "wishpos after: " << wish_position * fraction << " fraction: " << fraction << std::endl;
-      return;
-    }
     position_ += right_ * dir * fraction; 
   }
   else
