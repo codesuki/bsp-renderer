@@ -3,6 +3,13 @@
 
 #include "util.h"
 
+struct cmd_t 
+{
+  char forward_move;
+  char right_move;
+  char up_move;
+};
+
 class bsp;
 
 class camera
@@ -21,6 +28,8 @@ class camera
     void move(float dir);
 
     void updateTime(float time);
+
+    void update();
 
     glm::vec4 up_, right_, look_, position_;
     float difference_, pitch_, yaw_;

@@ -55,6 +55,6 @@ static const GLfloat quake2oglMatrix[16] =
 0, 0, 0, 1};
 
 //static const glm::mat4 quake2ogl(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-static const glm::mat4 quake2ogl(0.0, 0.0, -1.0, 0.0, -1.0,  0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+static const glm::mat4 quake2ogl(0.0f, 0.0f, -1.0f, 0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
 #endif
