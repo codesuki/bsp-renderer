@@ -336,7 +336,7 @@ public:
   void end_shader(const q3_shader& shader);
 
 
-  float trace(glm::vec4& start, glm::vec4& end);
+  float trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane);
   void check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end);
   void check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end);
 

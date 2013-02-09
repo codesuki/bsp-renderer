@@ -10,22 +10,19 @@ myfrustum::~myfrustum(void)
 
 void myfrustum::extract_planes(glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
 {      
-  // this calculation doesnt work anymore because matrix is switched from quake
-  // or maybe it does because actually we dont care about the order so much.
-
-	glm::mat4 combinedMatrix = viewMatrix * projectionMatrix;
+	combinedMatrix = projectionMatrix * viewMatrix;
 
   m_planes[LEFT] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 0);
   m_planes[RIGHT] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 0);
-  m_planes[UP] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 1);
-  m_planes[DOWN] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 1);
-  m_planes[FAR] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 2);
-  m_planes[NEAR] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 2);
+  m_planes[DOWN] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 1);
+  m_planes[UP] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 1);
+  m_planes[NEAR] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 2);
+  m_planes[FAR] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 2);
 
 	// Normalize planes
 	for (int i = 0; i < 6; ++i) 
 	{	
-    m_planes[i] = glm::normalize(m_planes[i]);
+    //m_planes[i] = glm::vec4(glm::normalize(glm::vec3(m_planes[i])), m_planes[i].w);
 	}   
 }
 

@@ -13,6 +13,7 @@ public:
 	bool box_in_frustum(glm::vec3& min, glm::vec3& max);
 
 	glm::vec4 m_planes[6];
+  glm::mat4 combinedMatrix;
 
 private:
   enum {

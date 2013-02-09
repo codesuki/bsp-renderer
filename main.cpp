@@ -4,6 +4,7 @@
 #include "frustum.h"
 #include "Logger.h"
 #include "Font.h"
+#include "Model.h"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -16,6 +17,10 @@ myfrustum g_frustum;
 bool g_noclip = true;
 
 Font font;
+
+
+
+cmd_t cmds;
 
 int main(int argc, char **argv)
 {
@@ -49,6 +54,10 @@ int main(int argc, char **argv)
 
   bsp *map = new bsp("maps\\q3dm6.bsp");
 
+  //Model model("models\\players\\tankjr\\head.md3");
+  //Model model("models\\players\\tankjr\\upper.md3");
+  //Model model("models\\players\\tankjr\\lower.md3");
+
   camera g_cam(vEyePt, map);
 
   glEnable(GL_DEPTH_TEST); 
@@ -73,10 +82,9 @@ int main(int argc, char **argv)
   while (true)
   {
     delta = SDL_GetTicks() - ticks;
-
-    g_cam.updateTime(delta);
-
     ticks = SDL_GetTicks(); 
+    
+    g_cam.updateTime(delta);
 
     SDL_Event event;
 
@@ -111,6 +119,16 @@ int main(int argc, char **argv)
     if (keystate[SDLK_w]) g_cam.move(-1.0f);
     if (keystate[SDLK_s]) g_cam.move(1.0f);
 
+    //memset(&cmds, 0, sizeof(cmd_t));
+
+    //if (keystate[SDLK_a]) cmds.right_move -= 127;
+    //if (keystate[SDLK_d]) cmds.right_move += 127;
+    //if (keystate[SDLK_w]) cmds.forward_move += 127;
+    //if (keystate[SDLK_s]) cmds.forward_move -= 127;
+    //if (keystate[SDLK_SPACE]) cmds.up_move += 127;
+
+    //g_cam.update();
+
     int x,y;
     SDL_PumpEvents();
     SDL_GetMouseState(&x, &y);
@@ -118,16 +136,16 @@ int main(int argc, char **argv)
     float rx = ((((float)x)-400.f)/100.f);
     float ry = ((((float)y)-300.f)/100.f);
  
-    g_cam.pitch(ry);
-    g_cam.yaw(rx);
+    g_cam.pitch(-ry);
+    g_cam.yaw(-rx);
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // Clear color and depth buffer
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     modelmatrix = g_cam.GetMatrix();
-        g_frustum.extract_planes(modelmatrix, projectionmatrix);
     modelmatrix *= quake2ogl;
+    g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
     // Graphical commands go here
     glEnable(GL_CULL_FACE);
@@ -137,12 +155,11 @@ int main(int argc, char **argv)
     glDisable(GL_CULL_FACE);
     font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
 
-    if (delta != 0)	
-    {
+    if (delta == 0) delta = 1;	
+    
       std::stringstream fps;
       fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
       font.PrintString(fps.str(), glm::vec2(10.0f, (float)HEIGHT-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
-    }
 
     SDL_GL_SwapBuffers();
   }
