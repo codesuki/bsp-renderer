@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <iostream>
 
-namespace Logger
+namespace logger
 {
   namespace {
     Level max_level_ = DEFAULT;

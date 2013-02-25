@@ -3,17 +3,14 @@
 
 #include "util.h"
 
-class myfrustum
+class Frustum
 {
 public:
-	myfrustum(void);
-	~myfrustum(void);
+	Frustum(void);
+	~Frustum(void);
 
-	void extract_planes(glm::mat4& viewMatrix, glm::mat4& projectionMatrix);
-	bool box_in_frustum(glm::vec3& min, glm::vec3& max);
-
-	glm::vec4 m_planes[6];
-  glm::mat4 combinedMatrix;
+	void ExtractPlanes(glm::mat4& view_matrix, glm::mat4& projection_matrix);
+	bool IsBoxInFrustum(glm::vec3& min, glm::vec3& max);
 
 private:
   enum {
@@ -24,6 +21,9 @@ private:
     NEAR,
     FAR
   };
+
+  glm::vec4 planes_[6];
+  glm::mat4 combined_matrix_;
 };
 
 #endif

@@ -1,21 +1,19 @@
-#ifndef _TEXTURE_H_
-#define _TEXTURE_H_
+#include "TextureLoader.h"
 
-class Texture
+namespace TextureLoader
 {
-public:
-  Texture();
-  virtual ~Texture();
-
-  // try to load jpg, if not available tga
-  static int LoadTexture(std::string filename, q3_shader_stage* shader) 
+  // try to load jpg, fall back to tga
+  int LoadTexture(std::string filename, q3_shader_stage* shader) 
   {                                             
-    if (filename.length() == 0) return -1;
-
-    //std::cout << "loading texture: " << filename << std::endl;
+    if (filename.length() == 0) 
+    {
+      return -1;
+    }
 
     if (filename.find('.') != std::string::npos)
+    {
       filename.erase(filename.end()-4, filename.end());
+    }
 
     std::string filename_tga = filename;
     filename_tga.append(".tga");
@@ -92,10 +90,9 @@ public:
     return 0;
   }
 
-  static int loadLightmap(bsp_lightmap& lightmap, GLuint* texture)
+  int LoadLightmap(bsp_lightmap& lightmap, GLuint* texture)
   {
-    SDL_Surface *image = SDL_CreateRGBSurfaceFrom(
-      static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
+    SDL_Surface *image = SDL_CreateRGBSurfaceFrom(static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
 
     // Have OpenGL generate a texture object handle for us
     glGenTextures(1, texture);
@@ -115,7 +112,4 @@ public:
 
     return 0;
   }
-};
-
-#endif /* _TEXTURE_H_ */
-
+}

@@ -1,7 +1,7 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-namespace Logger
+namespace logger
 {
   enum Level
   {

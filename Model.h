@@ -88,18 +88,18 @@ public:
 
 	Model(std::string filename);
 
-	md3_header m_header;
+	md3_header header_;
 
-	md3_frame* m_frames;
-	md3_tag* m_tags;
-	md3_surface* m_surfaces;
+	md3_frame* frames_;
+	md3_tag* tags_;
+	md3_surface* surfaces_;
 
-	md3_shader** m_shaders;
-	md3_triangle** m_triangles;
-	md3_texcoord** m_texcoords;
-	md3_vertex** m_normals;
+	md3_shader** shaders_;
+  md3_triangle** triangles_;
+	md3_texcoord** texcoords_;
+	md3_vertex** normals_;
 
-	my_vertex** m_vertices;
+	my_vertex** vertices_;
 };
 
 #endif
