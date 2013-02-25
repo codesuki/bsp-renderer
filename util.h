@@ -17,21 +17,13 @@
 #include "glm/gtc/matrix_access.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define strcasecmp _stricmp
-
 //#define GL_GLEXT_PROTOTYPES
-
-#define __USE_VBO__
-#define __USE_SHADERS__
 
 #include "glew/glew.h"
 
 #include "SDL.h"
 //#include "SDL_opengl.h"
 #include "SDL_image.h"
-
-GLuint CreateShader(GLenum eShaderType, const std::string &strShaderFile);
-GLuint CreateProgram(const std::vector<GLuint> &shaderList);
 
 #define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=NULL; } }
 #define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=NULL; } }

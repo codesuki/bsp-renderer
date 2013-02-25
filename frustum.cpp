@@ -1,44 +1,43 @@
-#include "frustum.h"
+#include "Frustum.h"
 
-myfrustum::myfrustum(void)
+Frustum::Frustum(void)
 {
 }
 
-myfrustum::~myfrustum(void)
+Frustum::~Frustum(void)
 {
 }
 
-void myfrustum::extract_planes(glm::mat4& viewMatrix, glm::mat4& projectionMatrix)
+void Frustum::ExtractPlanes(glm::mat4& view_matrix, glm::mat4& projection_matrix)
 {      
-	combinedMatrix = projectionMatrix * viewMatrix;
+	combined_matrix_ = projection_matrix * view_matrix;
 
-  m_planes[LEFT] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 0);
-  m_planes[RIGHT] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 0);
-  m_planes[DOWN] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 1);
-  m_planes[UP] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 1);
-  m_planes[NEAR] = glm::column(combinedMatrix, 3) + glm::column(combinedMatrix, 2);
-  m_planes[FAR] = glm::column(combinedMatrix, 3) - glm::column(combinedMatrix, 2);
+  planes_[LEFT] = glm::column(combined_matrix_, 3) + glm::column(combined_matrix_, 0);
+  planes_[RIGHT] = glm::column(combined_matrix_, 3) - glm::column(combined_matrix_, 0);
+  planes_[DOWN] = glm::column(combined_matrix_, 3) + glm::column(combined_matrix_, 1);
+  planes_[UP] = glm::column(combined_matrix_, 3) - glm::column(combined_matrix_, 1);
+  planes_[NEAR] = glm::column(combined_matrix_, 3) + glm::column(combined_matrix_, 2);
+  planes_[FAR] = glm::column(combined_matrix_, 3) - glm::column(combined_matrix_, 2);
 
 	// Normalize planes
 	for (int i = 0; i < 6; ++i) 
 	{	
-    //m_planes[i] = glm::vec4(glm::normalize(glm::vec3(m_planes[i])), m_planes[i].w);
+    //planes_[i] = glm::vec4(glm::normalize(glm::vec3(m_planes[i])), m_planes[i].w);
 	}   
 }
 
-// TODO: maybe optimize parameters
-bool myfrustum::box_in_frustum(glm::vec3& min, glm::vec3& max)
+bool Frustum::IsBoxInFrustum(glm::vec3& min, glm::vec3& max)
 {  
 	for (int i = 0; i < 6; i++) 
 	{
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(min.x, min.y, min.z)) + m_planes[i].w > 0) continue;
-    if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(max.x, min.y, min.z)) + m_planes[i].w > 0) continue;
-    if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(min.x, max.y, min.z)) + m_planes[i].w > 0) continue;
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(max.x, max.y, min.z)) + m_planes[i].w > 0) continue;
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(min.x, min.y, max.z)) + m_planes[i].w > 0) continue;
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(max.x, min.y, max.z)) + m_planes[i].w > 0) continue;
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(min.x, max.y, max.z)) + m_planes[i].w > 0) continue;
-		if (glm::dot(glm::vec3(m_planes[i]), glm::vec3(max.x, max.y, max.z)) + m_planes[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(min.x, min.y, min.z)) + planes_[i].w > 0) continue;
+    if (glm::dot(glm::vec3(planes_[i]), glm::vec3(max.x, min.y, min.z)) + planes_[i].w > 0) continue;
+    if (glm::dot(glm::vec3(planes_[i]), glm::vec3(min.x, max.y, min.z)) + planes_[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(max.x, max.y, min.z)) + planes_[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(min.x, min.y, max.z)) + planes_[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(max.x, min.y, max.z)) + planes_[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(min.x, max.y, max.z)) + planes_[i].w > 0) continue;
+		if (glm::dot(glm::vec3(planes_[i]), glm::vec3(max.x, max.y, max.z)) + planes_[i].w > 0) continue;
 
 		// If we get here, it isn't in the frustum because all points are behind of 1 plane
 		return false;

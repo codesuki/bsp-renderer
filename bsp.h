@@ -1,5 +1,5 @@
-#ifndef _BSP_H_
-#define _BSP_H_
+#ifndef __BSP_H__
+#define __BSP_H__
 
 #include "util.h"
 
@@ -146,8 +146,6 @@ public:
   }
 };
 
-
-
 struct bsp_meshvert {
   unsigned int offset;
 };
@@ -192,126 +190,6 @@ struct bsp_visdata {
   unsigned char* vecs; // [num_vecs*size_vecs]
 };
 
-enum wavefunc 
-{
-  WAVEFUNC_NONE,
-  WAVEFUNC_SIN,
-  WAVEFUNC_TRIANGLE,
-  WAVEFUNC_SQUARE,
-  WAVEFUNC_SAWTOOTH,
-  WAVEFUNC_INVERSESAWTOOTH
-};
-
-enum alphafunc
-{
-  ALPHAFUNC_NONE,
-  ALPHAFUNC_GREATER,
-  ALPHAFUNC_LESS,
-  ALPHAFUNC_GEQUAL
-};
-
-enum rgbgen_t
-{
-  RGBGEN_WAVE,
-  RGBGEN_IDENTITY,
-  RGBGEN_VERTEX,
-  RGBGEN_EXACTVERTEX
-};
-
-#define MAX_TEXMODS 4
-
-enum tcmod
-{
-  TCMOD_NONE,
-  TCMOD_SCROLL,
-  TCMOD_SCALE,
-  TCMOD_TURB,
-  TCMOD_TRANSFORM,
-  TCMOD_STRETCH,
-  TCMOD_ROTATE
-};
-
-struct waveform
-{ 
-  wavefunc type;
-  float base;
-  float amplitude;
-  float phase;
-  float frequency; 
-};
-
-struct texmod
-{
-  tcmod type;
-
-  waveform wave;
-
-  float scale[2];
-  float scroll[2];
-
-  float matrix[2][2];
-  float translate[2];
-
-  float rotate_speed;
-
-  texmod()
-  {
-    type = TCMOD_NONE;
-  };
-};
-
-struct q3_shader_stage {
-  GLuint texture;
-  bool translucent;
-  std::string map;
-  int blendfunc[2];
-  int alphafunc;
-  bool depthwrite;
-  bool clamp;
-
-  rgbgen_t rgbgen;
-  waveform rgbwave;
-
-  int num_texmods;
-  texmod texmods[MAX_TEXMODS];
-
-  q3_shader_stage() 
-  {
-    texture = NULL;
-    translucent = false;
-    blendfunc[0] = -1;
-    blendfunc[1] = -1;
-    alphafunc = NULL;
-    depthwrite = false;
-    rgbgen = RGBGEN_IDENTITY;
-    num_texmods = 0;
-    clamp = false;
-  };
-};
-
-class q3_shader {
-public:
-  q3_shader(void);
-  ~q3_shader(void);
-
-  void compile();
-
-  std::vector<q3_shader_stage*> stages;
-
-  bool translucent;
-  GLuint shader;
-  std::string name;
-
-  int texture_idx[8];
-  int position_idx;
-  int tex_coord_idx;
-  int lm_coord_idx;
-  int color_idx;
-  int time_idx;
-  int projection_idx;
-  int model_idx;
-};
-
 class bsp
 {
 public:
@@ -323,75 +201,70 @@ public:
   int find_leaf(const glm::vec4& camera_position);
   void get_visible_faces(const glm::vec4& camera_position);
 
-  void render(const glm::vec4& camera_position, float time);
   bool is_cluster_visible(int cluster, int test_cluster);
-  void render_face(bsp_face* face);
 
   void load_shaders();
-  int parse_shader_stage(const std::string* shader, int offset, q3_shader_stage* stage);
-  std::map<std::string, q3_shader*> m_shaders;
+
 
   void load_lightmaps();
-  void prepare_shader(q3_shader& shader, int offset, int lmindex);
-  void end_shader(const q3_shader& shader);
-
 
   float trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane);
   void check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end);
   void check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end);
 
-  std::bitset<10000> m_already_visible;
-  std::map<bsp_face*, std::vector<bezier*> > m_patches;
-  std::vector<bsp_face*> m_opaque_faces;
-  std::vector<bsp_face*> m_translucent_faces;
-
-  GLuint* lightmaps_;
+    GLuint* lightmaps_;
   GLuint vboId;
   GLuint iboId;
 
-  float m_time;
+    std::map<std::string, q3_shader*> shaders_;
+      float time_;
+
+  std::bitset<10000> already_visible_;
+  std::map<bsp_face*, std::vector<bezier*> > patches_;
+  std::vector<bsp_face*> opaque_faces_;
+  std::vector<bsp_face*> translucent_faces_;
 
   // some status variables for outputting info
-  int m_num_cluster_not_visible;
-  int m_num_not_in_frustum;
-  int m_num_skipped_faces;
-  int m_num_skipped_shaders;
+  int num_cluster_not_visible_;
+  int num_not_in_frustum_;
+  int num_skipped_faces_;
+  int num_skipped_shaders_;
 
-  int m_num_entities;
-  int m_num_textures;
-  int m_num_planes;
-  int m_num_nodes;
-  int m_num_leafs;
-  int m_num_leaffaces;
-  int m_num_leafbrushes;
-  int m_num_models;
-  int m_num_brushes;
-  int m_num_brushsides;
-  int m_num_vertexes;
-  int m_num_meshverts;
-  int m_num_effects;
-  int m_num_faces;
-  int m_num_lightmaps;
-  int m_num_lightvols;
+  int num_entities_;
+  int num_textures_;
+  int num_planes_;
+  int num_nodes_;
+  int num_leafs_;
+  int num_leaffaces_;
+  int num_leafbrushes_;
+  int num_models_;
+  int num_brushes_;
+  int num_brushsides_;
+  int num_vertexes_;
+  int num_meshverts_;
+  int num_effects_;
+  int num_faces_;
+  int num_lightmaps_;
+  int num_lightvols_;
 
-  bsp_header m_header;
-  bsp_entities* m_entities;
-  bsp_texture* m_textures;
-  bsp_plane* m_planes;
-  bsp_node* m_nodes;
-  bsp_leaf* m_leafs;
-  bsp_leafface* m_leaffaces;
-  bsp_leafbrush* m_leafbrushes;
-  bsp_model* m_models;
-  bsp_brush* m_brushes;
-  bsp_brushside* m_brushsides;
-  bsp_vertex* m_vertexes;
-  bsp_meshvert* m_meshverts;
-  bsp_effect* m_effects;
-  bsp_face* m_faces;
-  bsp_lightmap* m_lightmaps;
-  bsp_lightvol* m_lightvols;
-  bsp_visdata* m_visdata;
+  bsp_header header_;
+  bsp_entities* entities_;
+  bsp_texture* textures_;
+  bsp_plane* planes_;
+  bsp_node* nodes_;
+  bsp_leaf* leafs_;
+  bsp_leafface* leaffaces_;
+  bsp_leafbrush* leafbrushes_;
+  bsp_model* models_;
+  bsp_brush* brushes_;
+  bsp_brushside* brushsides_;
+  bsp_vertex* vertexes_;
+  bsp_meshvert* meshverts_;
+  bsp_effect* effects_;
+  bsp_face* faces_;
+  bsp_lightmap* lightmaps_;
+  bsp_lightvol* lightvols_;
+  bsp_visdata* visdata_;
 };
 
 #endif /* _BSP_H_ */ 

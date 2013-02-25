@@ -3,6 +3,7 @@
 
 #include "util.h"
 
+// in case we support multiple fonts, maybe extract print function.
 class Font
 {
 public:
