@@ -6,7 +6,7 @@
 class Shader
 {
 public:
-  Shader(void);
+  Shader(const Q3Shader& q3_shader) : q3_shader_(q3_shader) {};
   ~Shader(void);
 
   void CompileShader();
@@ -16,6 +16,8 @@ public:
 
   GLuint CreateShader(GLenum shader_type, const std::string& shader_file);
   GLuint CreateProgram(const std::vector<GLuint>& shader_list);
+
+  const Q3Shader& q3_shader_;
 
   unsigned int shader_;
 
