@@ -2,10 +2,14 @@
 
 #include "boost/filesystem.hpp"
 
+#include "Logger.h"
+#include "Q3Shader.h"
+
 namespace shaderloader
 {
   namespace {
     std::string shaders_ = "";
+    int offset_ = 0;
 
     int LoadShaderFile(std::string file_name, int file_size)
     {
@@ -17,7 +21,7 @@ namespace shaderloader
 
       shaders_.append(buffer, ifs.gcount());
 
-      SAFE_DELETE_ARRAY(buffer);
+      if (buffer) delete [] buffer;
 
       return 0;
     }
@@ -40,20 +44,20 @@ namespace shaderloader
       }
     }
 
-    std::string ExtractOneShader()
+    Q3Shader* ExtractOneShader()
     {
       bool is_shader = false;
       std::string name = "";
-      q3_shader* current_shader;
+      Q3Shader* current_shader;
 
-      for (int i = 0; i < g_shaders.length(); ++i) 
+      for (; offset_ < shaders_.length(); ++offset_) 
       {
-        switch (g_shaders[i]) 
+        switch (shaders_[offset_]) 
         {
         case '/':
-          if (g_shaders[i+1] == '/') 
+          if (shaders_[offset_+1] == '/') 
           {
-            i = get_newline_pos(&g_shaders, i);
+            offset_ = Q3Shader::GetNewLinePosition(&shaders_, offset_);
             break;
           } 
           else 
@@ -61,36 +65,29 @@ namespace shaderloader
             name.append(1, '/');
             break;
           }
-        case '{':
+        case '{': // TODO this is like the worst way ever to handle those shaders..,  change that later
           if (is_shader == true) 
           {
             // sub-shader found
-            q3_shader_stage* stage = new q3_shader_stage;
-            i = parse_shader_stage(&g_shaders, i, stage);
+            Q3ShaderStage* stage = new Q3ShaderStage();
+            offset_ = current_shader->ParseShaderStage(&shaders_, offset_, stage);
             current_shader->stages.push_back(stage);
           } 
           else 
           {
-            current_shader = new q3_shader();
-            current_shader->translucent = false;
-            current_shader->name = name;
-            m_shaders.insert(std::pair<std::string, q3_shader*>(name, current_shader));
+            current_shader = new Q3Shader(name);
             is_shader = true;
           }
-
           break;
         case '}':
-          Logger::Log(Logger::DEBUG, "Read shader %s (%i stages)", current_shader->name.c_str(), current_shader->stages.size());
-          name = "";
-          is_shader = false;
-          break;
-        case ' ':
-          break;
+          logger::Log(logger::DEBUG, "Read shader %s (%i stages)", current_shader->name_.c_str(), current_shader->stages.size());
+          return current_shader;
+        case ' ': break;
         case 0x09: break;
         case 0x0A: break;
         case 0x0D: break;
         default:
-          name.append(1, g_shaders[i]);
+          name.append(1, shaders_[offset_]);
         }
       }
     }
@@ -104,11 +101,12 @@ namespace shaderloader
     // break it up into single shaders
     std::vector<Shader> shaders;
 
-    while (ExtractOneShader())
+    Q3Shader* q3_shader;
+
+    while (q3_shader = ExtractOneShader(), q3_shader != nullptr)
     {
-      Q3Shader shader(name, buffer);
-      Shader shader(Q3Shader);
-      shaders.push_back(shader);
+      Shader ogl_shader(q3_shader);
+      shaders.push_back(ogl_shader);
     }
 
     return shaders;

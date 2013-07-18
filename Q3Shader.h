@@ -7,46 +7,46 @@
 
 #define MAX_TEXMODS 4
 
-enum WaveFunc 
+enum WAVEFUNC 
 {
-  WAVEFUNC_NONE,
-  WAVEFUNC_SIN,
-  WAVEFUNC_TRIANGLE,
-  WAVEFUNC_SQUARE,
-  WAVEFUNC_SAWTOOTH,
-  WAVEFUNC_INVERSESAWTOOTH
+  NONE,
+  SIN,
+  TRIANGLE,
+  SQUARE,
+  SAWTOOTH,
+  INVERSESAWTOOTH
 };
 
-enum AlphaFunc
+enum ALPHAFUNC
 {
-  ALPHAFUNC_NONE,
-  ALPHAFUNC_GREATER,
-  ALPHAFUNC_LESS,
-  ALPHAFUNC_GEQUAL
+  NONE,
+  GREATER,
+  LESS,
+  GEQUAL
 };
 
-enum RgbGen
+enum RGBGEN
 {
-  RGBGEN_WAVE,
-  RGBGEN_IDENTITY,
-  RGBGEN_VERTEX,
-  RGBGEN_EXACTVERTEX
+  WAVE,
+  IDENTITY,
+  VERTEX,
+  EXACTVERTEX
 };
 
-enum TcMod
+enum TCMOD
 {
-  TCMOD_NONE,
-  TCMOD_SCROLL,
-  TCMOD_SCALE,
-  TCMOD_TURB,
-  TCMOD_TRANSFORM,
-  TCMOD_STRETCH,
-  TCMOD_ROTATE
+  NONE,
+  SCROLL,
+  SCALE,
+  TURB,
+  TRANSFORM,
+  STRETCH,
+  ROTATE
 };
 
 struct WaveForm
 { 
-  WaveFunc type;
+  WAVEFUNC type;
   float base;
   float amplitude;
   float phase;
@@ -55,7 +55,7 @@ struct WaveForm
 
 struct TexMod
 {
-  TcMod type;
+  TCMOD type;
 
   WaveForm wave;
 
@@ -69,7 +69,7 @@ struct TexMod
 
   TexMod()
   {
-    type = TCMOD_NONE;
+    type = TCMOD::NONE;
   };
 };
 
@@ -82,7 +82,7 @@ struct Q3ShaderStage {
   bool depthwrite;
   bool clamp;
 
-  RgbGen rgbgen;
+  RGBGEN rgbgen;
   WaveForm rgbwave;
 
   int num_texmods;
@@ -96,7 +96,7 @@ struct Q3ShaderStage {
     blendfunc[1] = -1;
     alphafunc = 0;
     depthwrite = false;
-    rgbgen = RGBGEN_IDENTITY;
+    rgbgen = RGBGEN::IDENTITY;
     num_texmods = 0;
     clamp = false;
   };
@@ -105,26 +105,29 @@ struct Q3ShaderStage {
 class Q3Shader
 {
 public:
-  Q3Shader(void);
+  Q3Shader(const std::string name) : name_(name) {};
   ~Q3Shader(void);
 
   void ParseShader();
-  void ParseShaderStage();
+  int ParseShaderStage(const std::string* shaders, int offset, Q3ShaderStage* stage);
 
   int GetAlphaFunc(std::string name);
   int GetBlendFunc(std::string name);
-  WaveFunc GetWaveFunc(std::string name);
+  WAVEFUNC GetWaveFunc(std::string name);
 
   std::string BlendFuncToString(int blend_func);
 
-  int GetNewLinePosition();
-  int GetTokenEndPosition();
+  std::string GetToken(const std::string* buffer, int& offset);
+
+  static int GetNewLinePosition(const std::string* buffer, int offset);
+  int GetTokenEndPosition(const std::string* buffer, int offset);
 
   std::vector<Q3ShaderStage*> stages;
 
   bool translucent;
   unsigned int shader;
-  std::string name;
+
+  std::string name_;
 };
 
 #endif
