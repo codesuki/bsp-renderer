@@ -3,14 +3,17 @@
 #include "util.h"
 #include "bezier.h"
 #include "frustum.h"
-#include "Logger.h"
+#include "logger.h"
+#include "Q3Shader.h"
+#include "TextureLoader.h"
 
-bsp::bsp(void)
+
+Bsp::Bsp(void)
 {
 
 }
 
-bsp::~bsp(void)
+Bsp::~Bsp(void)
 {
   SAFE_DELETE_ARRAY(entities_->ents);
   SAFE_DELETE(entities_);
@@ -41,20 +44,20 @@ bsp::~bsp(void)
   }
 
   {
-    std::map<std::string, q3_shader*>::iterator it;
+    std::map<std::string, Q3Shader*>::iterator it;
     for (it = shaders_.begin(); it != shaders_.end(); ++it) 
     {
-      for (int i = 0; i < (*it).second->stages.size(); ++i) 
+      for (int i = 0; i < (*it).second->stages_.size(); ++i) 
       {
         // TODO free textures
-        SAFE_DELETE((*it).second->stages[i]);
+        SAFE_DELETE((*it).second->stages_[i]);
       }
       SAFE_DELETE((*it).second);
     }
   }
 }
 
-bsp::bsp(std::string filename)
+Bsp::Bsp(std::string filename)
 {
   std::ifstream fin(filename.c_str(), std::ios::binary);
 
@@ -188,91 +191,89 @@ bsp::bsp(std::string filename)
     }
   }
 
-  Logger::Log(Logger::DEBUG, "Loading shader files");
+  logger::Log(logger::DEBUG, "Loading shader files");
 
   load_shaders();
 
-  Logger::Log(Logger::DEBUG, "Checking if all needed textures are loaded");
+  logger::Log(logger::DEBUG, "Checking if all needed textures are loaded");
 
   for (int i = 0; i < num_textures_; ++i) 
   {
-    std::map<std::string, q3_shader*>::iterator it;
+    std::map<std::string, Q3Shader*>::iterator it;
     it = shaders_.find(textures_[i].name);
 
-    Logger::Log(Logger::DEBUG, "Checking texture: %s, %i, %i", textures_[i].name, textures_[i].flags, textures_[i].contents);
+    logger::Log(logger::DEBUG, "Checking texture: %s, %i, %i", textures_[i].name, textures_[i].flags, textures_[i].contents);
 
     if (it == shaders_.end()) 
     {
-      Logger::Log(Logger::DEBUG, "No shader for texture available. Creating shader and loading texture...");
+      logger::Log(logger::DEBUG, "No shader for texture available. Creating shader and loading texture...");
 
-      q3_shader* shader = new q3_shader();
-      shader->translucent = false;
-      shader->name = textures_[i].name;
+      Q3Shader* shader = new Q3Shader(textures_[i].name);
 
-      q3_shader_stage* stage = new q3_shader_stage;
+      Q3ShaderStage* stage = new Q3ShaderStage();
       stage->blendfunc[0] = GL_ONE;
       stage->blendfunc[1] = GL_ZERO;
-      int res = Texture::LoadTexture(textures_[i].name, (stage)); 
+      int res = textureLoader::LoadTexture(textures_[i].name, (stage)); 
       stage->map = textures_[i].name;
       if (res != 0) {
         stage->map = "noshader.tga";
         stage->texture = NULL;
       }
-      shader->stages.push_back(stage);
+      shader->stages_.push_back(stage);
 
       if (stage->translucent)
-        shader->translucent = true;
+        shader->translucent_ = true;
 
-      stage = new q3_shader_stage;
+      stage = new Q3ShaderStage;
       stage->map = "$lightmap";
       stage->blendfunc[0] = GL_DST_COLOR;
       stage->blendfunc[1] = GL_ZERO;
-      shader->stages.push_back(stage);		 
+      shader->stages_.push_back(stage);		 
 
-      shaders_.insert(std::pair<std::string, q3_shader*>(textures_[i].name, shader));
+      shaders_.insert(std::pair<std::string, Q3Shader*>(textures_[i].name, shader));
     } 
     else 
     {
-      q3_shader *shader = it->second;
-      shader->translucent = false;
-      Logger::Log(Logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", shader->stages.size());
+      Q3Shader *shader = it->second;
+      shader->translucent_ = false;
+      logger::Log(logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", shader->stages_.size());
 
-      for (int i = 0; i < shader->stages.size(); ++i) 
+      for (int i = 0; i < shader->stages_.size(); ++i) 
       {
         // some shaders don't have blendfunc values so set a default.
         // maybe remove in future and just dont process.
         if (i == 0)
         {
-          if (shader->stages[i]->blendfunc[0] == -1)
+          if (shader->stages_[i]->blendfunc[0] == -1)
           {
-            shader->stages[i]->blendfunc[0] = GL_ONE;
-            shader->stages[i]->blendfunc[1] = GL_ZERO;
+            shader->stages_[i]->blendfunc[0] = GL_ONE;
+            shader->stages_[i]->blendfunc[1] = GL_ZERO;
           }
         } 
         int res = 0;
-        shader->stages[i]->texture = NULL;
-        if (shader->stages[i]->map.compare("$whiteimage") == 0) 
+        shader->stages_[i]->texture = NULL;
+        if (shader->stages_[i]->map.compare("$whiteimage") == 0) 
         {
           continue;
         } 
-        else if (shader->stages[i]->map.compare("$lightmap") == 0) 
+        else if (shader->stages_[i]->map.compare("$lightmap") == 0) 
         {
           continue;
         } 
         else 
         {
-          res = Texture::LoadTexture(shader->stages[i]->map.c_str(), (shader->stages[i]));
+          res = textureLoader::LoadTexture(shader->stages_[i]->map.c_str(), (shader->stages_[i]));
         }
         if (res != 0) {
-          shader->stages[i]->map = "noshader.tga";
+          shader->stages_[i]->map = "noshader.tga";
         }
 
-        if (shader->stages[i]->translucent)
-          shader->translucent = true;
+        if (shader->stages_[i]->translucent)
+          shader->translucent_ = true;
       }
     }
   }
-  Logger::Log(Logger::DEBUG, "Finished loading all needed textures");    
+  logger::Log(logger::DEBUG, "Finished loading all needed textures");    
 
   // remove lightmap stage for faces without lightmap.
   for (int i = 0; i < num_faces_; ++i)
@@ -281,30 +282,30 @@ bsp::bsp(std::string filename)
     {
       continue;
     }
-    std::map<std::string, q3_shader*>::iterator it;
+    std::map<std::string, Q3Shader*>::iterator it;
     it = shaders_.find(textures_[faces_[i].texture].name);
-    q3_shader& shader = *(it->second);
-    for (int j = 0; j < shader.stages.size(); ++j)
+    Q3Shader& shader = *(it->second);
+    for (int j = 0; j < shader.stages_.size(); ++j)
     {
-      if (shader.stages[j]->map.compare("$lightmap") == 0)
+      if (shader.stages_[j]->map.compare("$lightmap") == 0)
       {
-        shader.stages.pop_back();
-        Logger::Log(Logger::DEBUG, "Removed lightmap from shader %s", textures_[faces_[i].texture].name);
+        shader.stages_.pop_back();
+        logger::Log(logger::DEBUG, "Removed lightmap from shader %s", textures_[faces_[i].texture].name);
       }
     }
   } 
 
-  Logger::Log(Logger::DEBUG, "Loading lightmaps...");
+  logger::Log(logger::DEBUG, "Loading lightmaps...");
   load_lightmaps();
-  Logger::Log(Logger::DEBUG, "Finished loading lightmaps");
+  logger::Log(logger::DEBUG, "Finished loading lightmaps");
 
 
   {
-    std::map<std::string, q3_shader*>::iterator it;
+    std::map<std::string, Q3Shader*>::iterator it;
 
     for (int i = 0; i < num_textures_; ++i) 
     {
-      std::map<std::string, q3_shader*>::iterator it;
+      std::map<std::string, Q3Shader*>::iterator it;
       it = shaders_.find(textures_[i].name);
 
       //std::cout << "processing: " << it->first << std::endl;
@@ -377,16 +378,16 @@ bsp::bsp(std::string filename)
   } 
 }
 
-void bsp::load_lightmaps()
+void Bsp::load_lightmaps()
 {
   lightmaps_ = new GLuint[num_lightmaps_];
   for (int i = 0; i < num_lightmaps_; ++i)
   {
-    Texture::loadLightmap(lightmaps_[i], &(lightmaps_[i]));  
+    textureLoader::LoadLightmap(lightmaps_[i], &(lightmaps_[i]));  
   }
 }
 
-int bsp::find_leaf(const glm::vec4& camera_position)
+int Bsp::find_leaf(const glm::vec4& camera_position)
 {
   int index = 0;
 
@@ -423,7 +424,7 @@ int bsp::find_leaf(const glm::vec4& camera_position)
   return -index - 1;
 }
 
-bool bsp::is_cluster_visible(int cluster, int test_cluster)
+bool Bsp::is_cluster_visible(int cluster, int test_cluster)
 {
   if ((visdata_->vecs == NULL) || (cluster < 0)) return true;
 
@@ -434,7 +435,7 @@ bool bsp::is_cluster_visible(int cluster, int test_cluster)
   return true;
 }
 
-void bsp::get_visible_faces(const glm::vec4& camera_position)
+void Bsp::get_visible_faces(const glm::vec4& camera_position)
 {
   opaque_faces_.clear();
   translucent_faces_.clear();
@@ -449,7 +450,7 @@ void bsp::get_visible_faces(const glm::vec4& camera_position)
 
   already_visible_.reset();
 
-  std::map<std::string, q3_shader*>::iterator it;
+  std::map<std::string, Q3Shader*>::iterator it;
 
   for (int i = num_leafs_-1; i >= 0; --i)
   {
@@ -523,7 +524,7 @@ glm::vec4 output_plane;
 
 float trace_radius = 20.0f;
 
-float bsp::trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane)
+float Bsp::trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane)
 {
   output_starts_out = true;
   output_all_solid = false;
@@ -545,7 +546,7 @@ float bsp::trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane)
   }
 }
 
-void bsp::check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end)
+void Bsp::check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end)
 {
   if (index < 0)
   {
@@ -633,7 +634,7 @@ void bsp::check_node(int index, float start_fraction, float end_fraction, glm::v
   }
 }       
 
-void bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
+void Bsp::check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end)
 {
   float start_fraction = -1.0f;
   float end_fraction = 1.0f;

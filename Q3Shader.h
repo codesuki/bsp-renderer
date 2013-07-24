@@ -7,7 +7,7 @@
 
 #define MAX_TEXMODS 4
 
-enum WAVEFUNC 
+enum class WAVEFUNC 
 {
   NONE,
   SIN,
@@ -17,7 +17,7 @@ enum WAVEFUNC
   INVERSESAWTOOTH
 };
 
-enum ALPHAFUNC
+enum class ALPHAFUNC
 {
   NONE,
   GREATER,
@@ -25,7 +25,7 @@ enum ALPHAFUNC
   GEQUAL
 };
 
-enum RGBGEN
+enum class RGBGEN
 {
   WAVE,
   IDENTITY,
@@ -33,7 +33,7 @@ enum RGBGEN
   EXACTVERTEX
 };
 
-enum TCMOD
+enum class TCMOD
 {
   NONE,
   SCROLL,
@@ -105,7 +105,7 @@ struct Q3ShaderStage {
 class Q3Shader
 {
 public:
-  Q3Shader(const std::string name) : name_(name) {};
+  Q3Shader(const std::string name) : name_(name), translucent_(false) {};
   ~Q3Shader(void);
 
   void ParseShader();
@@ -122,10 +122,10 @@ public:
   static int GetNewLinePosition(const std::string* buffer, int offset);
   int GetTokenEndPosition(const std::string* buffer, int offset);
 
-  std::vector<Q3ShaderStage*> stages;
+  std::vector<Q3ShaderStage*> stages_;
 
-  bool translucent;
-  unsigned int shader;
+  bool translucent_;
+  unsigned int shader_;
 
   std::string name_;
 };
