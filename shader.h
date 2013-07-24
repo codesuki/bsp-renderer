@@ -2,6 +2,7 @@
 #define __SHADER_H__
 
 #include "util.h"
+#include "Q3Shader.h"
 
 class Shader
 {
@@ -13,11 +14,16 @@ public:
   void CompileVertexShader();
   void CompileTesselationShader();
   void CompileFragmentShader();
+  void CompileFontShader();
 
   GLuint CreateShader(GLenum shader_type, const std::string& shader_file);
   GLuint CreateProgram(const std::vector<GLuint>& shader_list);
 
   const Q3Shader& q3_shader_;
+
+  std::stringstream vertex_shader_;
+  std::stringstream tesselation_shader_;
+  std::stringstream fragment_shader_;
 
   unsigned int shader_;
 

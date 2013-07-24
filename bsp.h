@@ -4,6 +4,7 @@
 #include "util.h"
 
 class bezier;
+class Q3Shader;
 
 #define PlaneTypeForNormal(x) (x[0] == 1.0 ? PLANE_X : (x[1] == 1.0 ? PLANE_Y : (x[2] == 1.0 ? PLANE_Z : PLANE_NON_AXIAL) ) )
 
@@ -190,13 +191,13 @@ struct bsp_visdata {
   unsigned char* vecs; // [num_vecs*size_vecs]
 };
 
-class bsp
+class Bsp
 {
 public:
-  bsp(void);
-  ~bsp(void);
+  Bsp(void);
+  ~Bsp(void);
 
-  bsp(std::string filename);
+  Bsp(std::string filename);
 
   int find_leaf(const glm::vec4& camera_position);
   void get_visible_faces(const glm::vec4& camera_position);
@@ -212,12 +213,12 @@ public:
   void check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end);
   void check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end);
 
-    GLuint* lightmaps_;
+  GLuint* lightmaps_;
   GLuint vboId;
   GLuint iboId;
 
-    std::map<std::string, q3_shader*> shaders_;
-      float time_;
+  std::map<std::string, Q3Shader*> shaders_;
+  float time_;
 
   std::bitset<10000> already_visible_;
   std::map<bsp_face*, std::vector<bezier*> > patches_;

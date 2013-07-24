@@ -1,9 +1,13 @@
 #ifndef _TEXTURELOADER_H_
 #define _TEXTURELOADER_H_
 
-namespace TextureLoader
+#include <string>
+#include "Q3Shader.h"
+#include "bsp.h"
+
+namespace textureLoader
 {
-  int LoadTexture(std::string filename, q3_shader_stage* shader);
+  int LoadTexture(std::string filename, Q3ShaderStage* shader);
   int LoadLightmap(bsp_lightmap& lightmap, GLuint* texture);
 }
 

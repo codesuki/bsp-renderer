@@ -3,7 +3,7 @@
 namespace TextureLoader
 {
   // try to load jpg, fall back to tga
-  int LoadTexture(std::string filename, q3_shader_stage* shader) 
+  int LoadTexture(std::string filename, Q3ShaderStage* shader) 
   {                                             
     if (filename.length() == 0) 
     {

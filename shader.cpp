@@ -8,14 +8,16 @@ Shader::~Shader(void)
 
 void Shader::CompileShader()
 { 
-  if (q3_shader_.stages.size() == 0)
+  if (q3_shader_.stages_.size() == 0)
     return;
 
-  std::replace(q3_shader_.name_.begin(), q3_shader_.name_.end(), '/', '-');
+  std::string name = q3_shader_.name_;
+
+  std::replace(name.begin(), name.end(), '/', '-');
 
   std::ofstream ofs;
 
-  std::string fname = "shaders/" + q3_shader_.name_ + ".vert";
+  std::string fname = "shaders/" + name + ".vert";
   ofs.open(fname.c_str());
   ofs << vertex_shader_.str();
   ofs.close();
@@ -34,7 +36,7 @@ void Shader::CompileShader()
   shaders.push_back(CreateShader(GL_VERTEX_SHADER, vertex_shader_.str()));
   shaders.push_back(CreateShader(GL_FRAGMENT_SHADER, fragment_shader_.str()));
 
-  //shaders.push_back(CreateShader(GL_TESS_EVALUATION_SHADER, tesselation_shader.str()));
+  //shaders.push_back(CreateShader(GL_TESS_EVALUATION_SHADER, tesselation_shader_.str()));
 
   shader_ = CreateProgram(shaders);
 
@@ -73,8 +75,7 @@ void Shader::CompileShader()
 
 void Shader::CompileVertexShader()
 {
-  std::stringstream vertex_shader;
-  vertex_shader << "#version 410\n" 
+  vertex_shader_ << "#version 410\n" 
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"
     << "uniform float inTime;\n" 
@@ -85,112 +86,110 @@ void Shader::CompileVertexShader()
     << "layout(location = 4) out vec2 outLmCoord;\n"
     << "layout(location = 5) out vec4 outColor;\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue; 
-    vertex_shader << "layout(location = " << 6+i << ") out vec2 outTexCoord" << i << ";\n";
+    vertex_shader_ << "layout(location = " << 6+i << ") out vec2 outTexCoord" << i << ";\n";
   }
 
-  vertex_shader << "void main() {\n"
+  vertex_shader_ << "void main() {\n"
     << "\toutLmCoord = inLmCoord;\n"
     << "\toutColor = inColor;\n"
     << "\tgl_Position = inProjectionMatrix * inModelMatrix * inPosition;\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue; 
 
-    vertex_shader << "\toutTexCoord" << i << " = inTexCoord;\n";
+    vertex_shader_ << "\toutTexCoord" << i << " = inTexCoord;\n";
   }  
 
-  vertex_shader << "\n\t// texture coordinate modifications\n";
-  vertex_shader << "\tfloat sinval;\n";
-  vertex_shader << "\tfloat cosval;\n";
-  vertex_shader << "\tfloat s;\n";
-  vertex_shader << "\tfloat t;\n";
-  vertex_shader << "\tfloat stretch;\n";
+  vertex_shader_ << "\n\t// texture coordinate modifications\n";
+  vertex_shader_ << "\tfloat sinval;\n";
+  vertex_shader_ << "\tfloat cosval;\n";
+  vertex_shader_ << "\tfloat s;\n";
+  vertex_shader_ << "\tfloat t;\n";
+  vertex_shader_ << "\tfloat stretch;\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     for (int j = 0; j < MAX_TEXMODS; ++j)
     {
-      if (stages[i]->texmods[j].type == TCMOD::SCALE)
+      if (q3_shader_.stages_[i]->texmods[j].type == TCMOD::SCALE)
       {   
-        vertex_shader << "\toutTexCoord" << i << ".s *= " << stages[i]->texmods[j].scale[0] << ";\n";
-        vertex_shader << "\toutTexCoord" << i << ".t *= " << stages[i]->texmods[j].scale[1] << ";\n";
+        vertex_shader_ << "\toutTexCoord" << i << ".s *= " << q3_shader_.stages_[i]->texmods[j].scale[0] << ";\n";
+        vertex_shader_ << "\toutTexCoord" << i << ".t *= " << q3_shader_.stages_[i]->texmods[j].scale[1] << ";\n";
       }
 
-      if (stages[i]->texmods[j].type == TCMOD::SCROLL)
+      if (q3_shader_.stages_[i]->texmods[j].type == TCMOD::SCROLL)
       {
-        vertex_shader << "\toutTexCoord" << i 
-          << ".s += inTime * " << stages[i]->texmods[j].scroll[0] 
-        << " - floor(inTime * " << stages[i]->texmods[j].scroll[0] << ")" 
+        vertex_shader_ << "\toutTexCoord" << i 
+          << ".s += inTime * " << q3_shader_.stages_[i]->texmods[j].scroll[0] 
+        << " - floor(inTime * " << q3_shader_.stages_[i]->texmods[j].scroll[0] << ")" 
           << ";\n";
-        vertex_shader << "\toutTexCoord" << i
-          << ".t += inTime * " << stages[i]->texmods[j].scroll[1]
-        << " - floor(inTime * " << stages[i]->texmods[j].scroll[1] << ")" 
+        vertex_shader_ << "\toutTexCoord" << i
+          << ".t += inTime * " << q3_shader_.stages_[i]->texmods[j].scroll[1]
+        << " - floor(inTime * " << q3_shader_.stages_[i]->texmods[j].scroll[1] << ")" 
           << ";\n";
       }
 
-      if (stages[i]->texmods[j].type == TCMOD::ROTATE)
+      if (q3_shader_.stages_[i]->texmods[j].type == TCMOD::ROTATE)
       {
-        vertex_shader << "sinval = sin(radians(inTime * " << stages[i]->texmods[j].rotate_speed << "));\n";  
-        vertex_shader << "cosval = cos(radians(inTime * " << stages[i]->texmods[j].rotate_speed << "));\n";  
+        vertex_shader_ << "sinval = sin(radians(inTime * " << q3_shader_.stages_[i]->texmods[j].rotate_speed << "));\n";  
+        vertex_shader_ << "cosval = cos(radians(inTime * " << q3_shader_.stages_[i]->texmods[j].rotate_speed << "));\n";  
 
-        vertex_shader << "s = outTexCoord" << i << ".s;\n";
-        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+        vertex_shader_ << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader_ << "t = outTexCoord" << i << ".t;\n";
 
-        vertex_shader << "\toutTexCoord" << i 
+        vertex_shader_ << "\toutTexCoord" << i 
           << ".s = s * cosval + t * -sinval + (0.5 - 0.5 * cosval + 0.5 * sinval)" 
           << ";\n";
-        vertex_shader << "\toutTexCoord" << i 
+        vertex_shader_ << "\toutTexCoord" << i 
           << ".t = s * sinval + t * cosval + (0.5 - 0.5 * sinval - 0.5 * cosval)" 
           << ";\n"; 
       } 
 
-      if (stages[i]->texmods[j].type == TCMOD::STRETCH)
+      if (q3_shader_.stages_[i]->texmods[j].type == TCMOD::STRETCH)
       {             
-        vertex_shader << "sinval = " << stages[i]->texmods[j].wave.amplitude << " * " 
+        vertex_shader_ << "sinval = " << q3_shader_.stages_[i]->texmods[j].wave.amplitude << " * " 
           << "sin(" 
-          << stages[i]->texmods[j].wave.frequency << " * inTime + " << stages[i]->texmods[j].wave.phase 
-          << ") + " << stages[i]->texmods[j].wave.base << ";\n";  
+          << q3_shader_.stages_[i]->texmods[j].wave.frequency << " * inTime + " << q3_shader_.stages_[i]->texmods[j].wave.phase 
+          << ") + " << q3_shader_.stages_[i]->texmods[j].wave.base << ";\n";  
 
-        vertex_shader << "stretch = 1.0 / sinval;\n";
-        vertex_shader << "s = outTexCoord" << i << ".s;\n";
-        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+        vertex_shader_ << "stretch = 1.0 / sinval;\n";
+        vertex_shader_ << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader_ << "t = outTexCoord" << i << ".t;\n";
 
-        vertex_shader << "\toutTexCoord" << i << ".s = s * stretch + t * 0 + (0.5 - 0.5 * stretch)" 
+        vertex_shader_ << "\toutTexCoord" << i << ".s = s * stretch + t * 0 + (0.5 - 0.5 * stretch)" 
           << ";\n";
-        vertex_shader << "\toutTexCoord" << i << ".t = s * 0 + t * stretch + (0.5 - 0.5 * stretch)" 
+        vertex_shader_ << "\toutTexCoord" << i << ".t = s * 0 + t * stretch + (0.5 - 0.5 * stretch)" 
           << ";\n";
       }
 
-      if (stages[i]->texmods[j].type == TCMOD::TRANSFORM)
+      if (q3_shader_.stages_[i]->texmods[j].type == TCMOD::TRANSFORM)
       { 
-        vertex_shader << "s = outTexCoord" << i << ".s;\n";
-        vertex_shader << "t = outTexCoord" << i << ".t;\n";
+        vertex_shader_ << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader_ << "t = outTexCoord" << i << ".t;\n";
 
-        vertex_shader << "\toutTexCoord" << i << ".s = s * " << stages[i]->texmods[j].matrix[0][0]
-        << " + t * " << stages[i]->texmods[j].matrix[1][0]
-        << " + " << stages[i]->texmods[j].translate[0] 
+        vertex_shader_ << "\toutTexCoord" << i << ".s = s * " << q3_shader_.stages_[i]->texmods[j].matrix[0][0]
+        << " + t * " << q3_shader_.stages_[i]->texmods[j].matrix[1][0]
+        << " + " << q3_shader_.stages_[i]->texmods[j].translate[0] 
         << ";\n";
-        vertex_shader << "\toutTexCoord" << i << ".t = s * " << stages[i]->texmods[j].matrix[0][1]
-        << " + t * " << stages[i]->texmods[j].matrix[1][1]
-        << " + " << stages[i]->texmods[j].translate[1] 
+        vertex_shader_ << "\toutTexCoord" << i << ".t = s * " << q3_shader_.stages_[i]->texmods[j].matrix[0][1]
+        << " + t * " << q3_shader_.stages_[i]->texmods[j].matrix[1][1]
+        << " + " << q3_shader_.stages_[i]->texmods[j].translate[1] 
         << ";\n"; 
       }
     }
   }
-  vertex_shader << "}";
+  vertex_shader_ << "}";
 }
 
 void Shader::CompileTesselationShader()
 {
-  std::stringstream tesselation_shader;
-
-  tesselation_shader << "#version 410\n"
+  tesselation_shader_ << "#version 410\n"
     << "layout(quads) in;\n" 
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"
@@ -199,45 +198,45 @@ void Shader::CompileTesselationShader()
     << "layout(location = 4) out vec2 toutLmCoord;\n"
     << "layout(location = 5) out vec4 toutColor;\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue;
 
-    tesselation_shader << "in vec2 outTexCoord" << i << "[];\n";
+    tesselation_shader_ << "in vec2 outTexCoord" << i << "[];\n";
   }
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue; 
-    tesselation_shader << "layout(location = " << 6+i << ") out vec2 toutTexCoord" << i << ";\n";
+    tesselation_shader_ << "layout(location = " << 6+i << ") out vec2 toutTexCoord" << i << ";\n";
   }
 
-  tesselation_shader << "void main() {\n";
+  tesselation_shader_ << "void main() {\n";
 
-  tesselation_shader << "float u = gl_TessCoord.x;\n"
+  tesselation_shader_ << "float u = gl_TessCoord.x;\n"
     << "float v = gl_TessCoord.y;\n";
 
-  tesselation_shader << "vec2 y; vec2 z; vec4 y4; vec4 z4;";
+  tesselation_shader_ << "vec2 y; vec2 z; vec4 y4; vec4 z4;";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue; 
-    tesselation_shader << "\ty = mix(outTexCoord" << i << "[0], outTexCoord" << i << "[6], u);\n";
-    tesselation_shader << "\tz = mix(outTexCoord" << i << "[2], outTexCoord" << i << "[8], u);\n";
-    tesselation_shader << "\ttoutTexCoord" << i << " = mix(y, z, v);\n";
+    tesselation_shader_ << "\ty = mix(outTexCoord" << i << "[0], outTexCoord" << i << "[6], u);\n";
+    tesselation_shader_ << "\tz = mix(outTexCoord" << i << "[2], outTexCoord" << i << "[8], u);\n";
+    tesselation_shader_ << "\ttoutTexCoord" << i << " = mix(y, z, v);\n";
   }  
-  tesselation_shader << "\ty = mix(outLmCoord[0], outLmCoord[6], u);\n";
-  tesselation_shader << "\tz = mix(outLmCoord[2], outLmCoord[8], u);\n";
-  tesselation_shader << "toutLmCoord = mix(y, z, v);\n";
+  tesselation_shader_ << "\ty = mix(outLmCoord[0], outLmCoord[6], u);\n";
+  tesselation_shader_ << "\tz = mix(outLmCoord[2], outLmCoord[8], u);\n";
+  tesselation_shader_ << "toutLmCoord = mix(y, z, v);\n";
 
-  tesselation_shader << "\ty4 = mix(outColor[0], outColor[6], u);\n";
-  tesselation_shader << "\tz4 = mix(outColor[2], outColor[8], u);\n";
-  tesselation_shader << "toutColor = mix(y4, z4, v);\n";
+  tesselation_shader_ << "\ty4 = mix(outColor[0], outColor[6], u);\n";
+  tesselation_shader_ << "\tz4 = mix(outColor[2], outColor[8], u);\n";
+  tesselation_shader_ << "toutColor = mix(y4, z4, v);\n";
 
-  tesselation_shader << "vec4 a = mix(gl_in[0].gl_Position, gl_in[6].gl_Position, u);\n"
+  tesselation_shader_ << "vec4 a = mix(gl_in[0].gl_Position, gl_in[6].gl_Position, u);\n"
     << "vec4 b = mix(gl_in[2].gl_Position, gl_in[8].gl_Position, u);\n"
     << "vec4 pos = mix(a, b, v);\n"
     << "gl_Position =  pos;\n"
@@ -246,53 +245,51 @@ void Shader::CompileTesselationShader()
 
 void Shader::CompileFragmentShader()
 {
-  std::stringstream fragment_shader;
+  fragment_shader_ << "#version 410\n"; 
 
-  fragment_shader << "#version 410\n"; 
-
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    fragment_shader << "uniform sampler2D texture" << i << "; //" << stages[i]->map << "\n";
+    fragment_shader_ << "uniform sampler2D texture" << i << "; //" << q3_shader_.stages_[i]->map << "\n";
   }
 
-  fragment_shader << "uniform float inTime;\n";
-  fragment_shader << "layout(location = 4) in vec2 toutLmCoord;\n";
-  fragment_shader << "layout(location = 5) in vec4 toutColor;\n";
+  fragment_shader_ << "uniform float inTime;\n";
+  fragment_shader_ << "layout(location = 4) in vec2 toutLmCoord;\n";
+  fragment_shader_ << "layout(location = 5) in vec4 toutColor;\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap")) 
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap")) 
       continue;
 
-    fragment_shader << "layout(location = " << 6+i << ") in vec2 toutTexCoord" << i << ";\n";
+    fragment_shader_ << "layout(location = " << 6+i << ") in vec2 toutTexCoord" << i << ";\n";
   }
 
-  fragment_shader << "layout(location = 0) out vec4 fragColor;\n";
+  fragment_shader_ << "layout(location = 0) out vec4 fragColor;\n";
 
-  fragment_shader << "void main() {\n";
+  fragment_shader_ << "void main() {\n";
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    if (!stages[i]->map.compare("$lightmap"))
+    if (!q3_shader_.stages_[i]->map.compare("$lightmap"))
     {  
-      fragment_shader << "\tvec4 color" << i 
+      fragment_shader_ << "\tvec4 color" << i 
         << " = texture2D(texture" << i << ", toutLmCoord.st);\n";
     }   
     else
     {   
-      fragment_shader << "\tvec4 color" << i 
+      fragment_shader_ << "\tvec4 color" << i 
         << " = texture2D(texture" << i << ", toutTexCoord" << i << ".st);\n";
     }
   }
 
-  fragment_shader << "\tfloat sincolor;\n";
+  fragment_shader_ << "\tfloat sincolor;\n";
 
   std::string dst;
   std::string src;
 
-  for (int i = 0; i < stages.size(); ++i)
+  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
-    const Q3ShaderStage& stage = *(stages[i]);
+    const Q3ShaderStage& stage = *(q3_shader_.stages_[i]);
 
     std::stringstream helper;
     helper << "color" << i;
@@ -312,108 +309,191 @@ void Shader::CompileFragmentShader()
     // 0.5 equals 128 when normalized to 0-1 range
     if (stage.alphafunc == GL_GREATER)
     {
-      fragment_shader << "\tif (" << src << ".a > 0) discard;\n";
+      fragment_shader_ << "\tif (" << src << ".a > 0) discard;\n";
     }
     else if (stage.alphafunc == GL_LESS)
     {
-      fragment_shader << "\tif (" << src << ".a > 0.5) discard;\n";
+      fragment_shader_ << "\tif (" << src << ".a > 0.5) discard;\n";
     }
     else if (stage.alphafunc == GL_GEQUAL)
     {
-      fragment_shader << "\tif (" << src << ".a <= 0.5) discard;\n";
+      fragment_shader_ << "\tif (" << src << ".a <= 0.5) discard;\n";
     }
 
     switch (stage.rgbgen)
     {
     case RGBGEN::IDENTITY:
-      fragment_shader << "\t" << src << " *= ";
-      fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0);\n";
+      fragment_shader_ << "\t" << src << " *= ";
+      fragment_shader_ << "vec4(1.0, 1.0, 1.0, 1.0);\n";
       break;
       /*case RGBGEN::VERTEX:
-      fragment_shader << "\t" << src << " *= ";
-      fragment_shader << "outColor;\n";
+      fragment_shader_ << "\t" << src << " *= ";
+      fragment_shader_ << "outColor;\n";
       break;*/
     case RGBGEN::WAVE:
-      fragment_shader << "\tsincolor = clamp(" << stages[i]->rgbwave.amplitude << " * " 
+      fragment_shader_ << "\tsincolor = clamp(" << q3_shader_.stages_[i]->rgbwave.amplitude << " * " 
         << "sin(" 
-        << stages[i]->rgbwave.frequency << " * inTime + " << stages[i]->rgbwave.phase 
-        << ") + " << stages[i]->rgbwave.base << ", 0.0, 1.0);\n";
+        << q3_shader_.stages_[i]->rgbwave.frequency << " * inTime + " << q3_shader_.stages_[i]->rgbwave.phase 
+        << ") + " << q3_shader_.stages_[i]->rgbwave.base << ", 0.0, 1.0);\n";
 
-      fragment_shader << "\t" << src << " *= vec4(sincolor, sincolor, sincolor, 1.0);\n";
+      fragment_shader_ << "\t" << src << " *= vec4(sincolor, sincolor, sincolor, 1.0);\n";
       break;
     default:
-      fragment_shader << "\t" << src << " *= ";
-      fragment_shader << "vec4(1.0, 1.0, 1.0, 1.0);\n";
+      fragment_shader_ << "\t" << src << " *= ";
+      fragment_shader_ << "vec4(1.0, 1.0, 1.0, 1.0);\n";
     }
 
-    fragment_shader << "\t" << src << " = (" << src << " * ";
+    fragment_shader_ << "\t" << src << " = (" << src << " * ";
     switch (stage.blendfunc[0])
     {
     case GL_ONE:
-      fragment_shader << "1";
+      fragment_shader_ << "1";
       break;
     case GL_ZERO:
-      fragment_shader << "0";
+      fragment_shader_ << "0";
       break;
     case GL_DST_COLOR:
-      fragment_shader << dst;
+      fragment_shader_ << dst;
       break;
     case GL_SRC_COLOR:
-      fragment_shader << src;
+      fragment_shader_ << src;
       break;
     case GL_DST_ALPHA:
-      fragment_shader << dst << ".a";
+      fragment_shader_ << dst << ".a";
       break;
     case GL_SRC_ALPHA:
-      fragment_shader << src << ".a";
+      fragment_shader_ << src << ".a";
       break;
     case GL_ONE_MINUS_SRC_ALPHA:
-      fragment_shader << "(1 - " << src << ".a)";
+      fragment_shader_ << "(1 - " << src << ".a)";
       break;
     case GL_ONE_MINUS_DST_ALPHA:
-      fragment_shader << "(1 - " << dst << ".a)";
+      fragment_shader_ << "(1 - " << dst << ".a)";
       break;
     default:
       std::cout << stage.map << " :: " << stage.blendfunc[0] << std::endl; 
     }
 
-    fragment_shader << ") + (" << dst << " * "; 
+    fragment_shader_ << ") + (" << dst << " * "; 
 
     switch (stage.blendfunc[1])
     {
     case GL_ONE:
-      fragment_shader << "1";
+      fragment_shader_ << "1";
       break;
     case GL_ZERO:
-      fragment_shader << "0";
+      fragment_shader_ << "0";
       break;
     case GL_DST_COLOR:
-      fragment_shader << dst;
+      fragment_shader_ << dst;
       break;
     case GL_SRC_COLOR:
-      fragment_shader << src;
+      fragment_shader_ << src;
       break;
     case GL_DST_ALPHA:
-      fragment_shader << dst << ".a";
+      fragment_shader_ << dst << ".a";
       break;
     case GL_SRC_ALPHA:
-      fragment_shader << src << ".a";
+      fragment_shader_ << src << ".a";
       break;
     case GL_ONE_MINUS_SRC_ALPHA:
-      fragment_shader << "(1 - " << src << ".a)";
+      fragment_shader_ << "(1 - " << src << ".a)";
       break;
     case GL_ONE_MINUS_DST_ALPHA:
-      fragment_shader << "(1 - " << dst << ".a)";
+      fragment_shader_ << "(1 - " << dst << ".a)";
       break;                  
     default:
       std::cout << stage.map << " :: " << stage.blendfunc[1] << std::endl; 
     }
 
-    fragment_shader << ");\n"; 
+    fragment_shader_ << ");\n"; 
   }   
 
-  fragment_shader << "\t" << "fragColor = " << src << ";\n";  
+  fragment_shader_ << "\t" << "fragColor = " << src << ";\n";  
+  fragment_shader_ << "}";
+}
+
+int Shader::CompileFontShader()
+{
+    SDL_Surface *image = IMG_Load(font.c_str());
+
+  GLenum texture_format;
+  GLint num_colors = image->format->BytesPerPixel;
+
+  if (num_colors == 4) // contains an alpha channel
+  {
+    if (image->format->Rmask == 0x000000ff)
+      texture_format = GL_RGBA;
+    else
+      texture_format = GL_BGRA;
+  } 
+  else if (num_colors == 3) // no alpha channel
+  {
+    if (image->format->Rmask == 0x000000ff)
+      texture_format = GL_RGB;
+    else
+      texture_format = GL_BGR;
+  }
+
+  glGenTextures(1, &texture_);
+  glBindTexture(GL_TEXTURE_2D, texture_);
+
+  // Set the texture's stretching properties
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // Edit the texture object's image data using the information SDL_Surface gives us
+  glTexImage2D(GL_TEXTURE_2D, 0, num_colors, image->w, image->h, 0,
+    texture_format, GL_UNSIGNED_BYTE, image->pixels);
+
+  std::stringstream vertex_shader;
+  vertex_shader << "#version 130\n" 
+    << "uniform mat4 inProjectionMatrix;\n"
+    << "in vec2 inPosition;\n" 
+    << "in vec2 inTexCoord;\n"
+    << "out vec2 outTexCoord;\n";
+
+  vertex_shader << "void main() {\n"
+    << "\toutTexCoord = inTexCoord;\n"
+    << "\tgl_Position = inProjectionMatrix * vec4(inPosition, 0.0, 1.0);\n";
+  vertex_shader << "}";
+
+  std::stringstream fragment_shader;
+  fragment_shader << "#version 130\n" 
+    << "uniform sampler2D texture;\n"
+    << "uniform vec4 color;\n"
+    //<< "in vec4 outColor;\n"
+    << "in vec2 outTexCoord;\n"
+    << "out vec4 fragColor;\n";
+
+  fragment_shader << "void main() {\n";
+  fragment_shader << "\tfragColor = texture2D(texture, outTexCoord) * color;\n";
   fragment_shader << "}";
+
+  std::vector<GLuint> shaders;
+  shaders.push_back(CreateShader(GL_VERTEX_SHADER, vertex_shader.str()));
+  shaders.push_back(CreateShader(GL_FRAGMENT_SHADER, fragment_shader.str()));
+
+  shader_ = CreateProgram(shaders);
+
+  // setup texture input and model/projective matrix in shader
+  texture_idx_ = glGetUniformLocation(shader_, "texture"); 
+  color_idx_ = glGetUniformLocation(shader_, "color");
+  projection_idx_ = glGetUniformLocation(shader_, "inProjectionMatrix");
+
+  position_idx_ = glGetAttribLocation(shader_, "inPosition");
+  glEnableVertexAttribArray(position_idx_);
+  tex_coord_idx_ = glGetAttribLocation(shader_, "inTexCoord");
+  glEnableVertexAttribArray(tex_coord_idx_);
+
+  glUseProgram(shader_);
+  glUniform1i(texture_idx_, 0);
+  glUseProgram(0);
+
+  SDL_FreeSurface(image);
 }
 
 GLuint Shader::CreateShader(GLenum eShaderType, const std::string &strShaderFile)

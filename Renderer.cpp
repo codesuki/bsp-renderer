@@ -12,8 +12,59 @@ Renderer::~Renderer(void)
 {
 }
 
+void Renderer::Initialize()
+{
+  glEnable(GL_DEPTH_TEST); 
+  glDisable(GL_LIGHTING);
+
+  glEnable(GL_CULL_FACE);
+  glFrontFace(GL_CW);
+
+#ifndef __USE_SHADERS__
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+#endif
+
+  glViewport(0, 0, WIDTH, HEIGHT);
+
+  projectionmatrix = glm::perspective(90.0f, (float)WIDTH/(float)HEIGHT, 1.0f, 10000.f);
+  orthomatrix = glm::ortho(0.0f, (float)WIDTH, 0.0f, (float)HEIGHT, -1.0f, 1.0f);
+}
+
+void Renderer::SetupFrame()
+{
+  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+}
+
+void Renderer::Setup3DRendering()
+{
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+  modelmatrix = g_cam.GetMatrix();
+  modelmatrix *= quake2ogl;
+  g_frustum.extract_planes(modelmatrix, projectionmatrix);
+
+  // Graphical commands go here
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE);
+  map->render(g_cam.position_, ((float)ticks)/1000.0f);
+}
+
+void Renderer::Setup2DRendering()
+{
+    glDisable(GL_CULL_FACE);
+
+
+
+}
+
 void Renderer::RenderFrame(const glm::vec4& camera_position, float time)
 {
+  SetupFrame();
+  
+  // draw scene
+  Setup3DRendering();
   // this in world.update()
   get_visible_faces(camera_position);
   std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
@@ -28,10 +79,24 @@ void Renderer::RenderFrame(const glm::vec4& camera_position, float time)
   }
 
   m_time = time;
+
+  // draw gui and overlays
+  Setup2DRendering();
+
+  font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
+
+    if (delta == 0) delta = 1;	
+    
+      std::stringstream fps;
+      fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
+      font.PrintString(fps.str(), glm::vec2(10.0f, (float)HEIGHT-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
+
+  // finish frame
+  SDL_GL_SwapBuffers();
 }
 
 
-void Renderer::FinishShader(const q3_shader& shader)
+void Renderer::FinishShader(const Q3Shader& shader)
 {
   glDisable(GL_BLEND);
 }
@@ -82,7 +147,7 @@ void Renderer::ActiveTexture(unsigned int new_active_texture)
   } 
 }
 
-void Renderer::SetupShader(q3_shader& shader, int offset, int lm_index)
+void Renderer::SetupShader(Q3Shader& shader, int offset, int lm_index)
 { 
   const bsp_vertex& vertex = m_vertexes[offset];
 
