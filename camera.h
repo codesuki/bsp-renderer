@@ -3,13 +3,6 @@
 
 #include "util.h"
 
-struct cmd_t 
-{
-  char forward_move;
-  char right_move;
-  char up_move;
-};
-
 class bsp;
 
 class camera
