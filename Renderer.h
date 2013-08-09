@@ -1,6 +1,10 @@
 #ifndef __RENDERER_H__
 #define __RENDERER_H__
 
+glm::mat4 modelmatrix;
+glm::mat4 projectionmatrix;
+glm::mat4 orthomatrix;
+
 class Renderer
 {
 public:

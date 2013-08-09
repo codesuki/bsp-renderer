@@ -9,19 +9,6 @@
 #define WIDTH 1280
 #define HEIGHT 720
 
-glm::mat4 modelmatrix;
-glm::mat4 projectionmatrix;
-glm::mat4 orthomatrix;
-
-Frustum g_frustum;
-bool g_noclip = true;
-
-Font font;
-
-
-
-cmd_t cmds;
-
 int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -46,12 +33,18 @@ int main(int argc, char **argv)
   logger::Log(logger::DEBUG, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
   glm::vec4 vEyePt( -10.0f, 10.0f, 20.0f, 1.0f );
+
   font.LoadFont("gfx\\2d\\bigchars.tga");
+
   Bsp *map = new Bsp("maps\\q3dm6.bsp");
+
+  Model model("tankjr");
+
+  World world;
+
   //Model model("models\\players\\tankjr\\head.md3");
   //Model model("models\\players\\tankjr\\upper.md3");
   //Model model("models\\players\\tankjr\\lower.md3");
-  camera g_cam(vEyePt, map);
 
   unsigned int ticks = 0;   
   unsigned int delta = 0;
@@ -60,6 +53,10 @@ int main(int argc, char **argv)
   {
     delta = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks(); 
+
+    world.update();
+
+    renderer.render();
           
 
   }
