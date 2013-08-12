@@ -13,7 +13,7 @@ namespace shaderLoader
     std::vector<Shader*> shaders_;
 
     std::string shaderbuffer_ = "";
-    int offset_ = 0;
+    unsigned int offset_ = 0;
 
     int LoadShaderFile(std::string file_name, int file_size)
     {
@@ -85,6 +85,7 @@ namespace shaderLoader
           break;
         case '}':
           logger::Log(logger::DEBUG, "Read shader %s (%i stages)", current_shader->name_.c_str(), current_shader->stages_.size());
+          ++offset_;
           return current_shader;
         case ' ': break;
         case 0x09: break;
@@ -158,8 +159,17 @@ namespace shaderLoader
       shaders_by_name_[q3_shader->name_] = ogl_shader;
       //delete q3_shader; // not needed after being converted
     }
-
+    shaderbuffer_ = "";
     return 0;
+  }
+
+  void Deinitialize() 
+  {
+    for (auto& shader : shaders_by_name_)
+    {
+      delete &(shader.second->q3_shader_);
+      delete shader.second;
+    }
   }
 }
 

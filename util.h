@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 
+#define GLEW_STATIC
 #include "glew/glew.h"
 
 #define GLM_FORCE_RADIANS
