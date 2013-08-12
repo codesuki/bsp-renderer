@@ -8,11 +8,11 @@ Q3Shader::~Q3Shader(void)
 {
 }
 
-int Q3Shader::ParseShaderStage(const std::string* shaders, int offset)
+unsigned int Q3Shader::ParseShaderStage(const std::string* shaders, unsigned int offset)
 {
   Q3ShaderStage stage;
 
-  int i = offset;
+  unsigned int i = offset;
   for (; i < shaders->length(); ++i) 
   {
     switch ((*shaders)[i]) 
@@ -25,7 +25,9 @@ int Q3Shader::ParseShaderStage(const std::string* shaders, int offset)
       } 
       break;
     case '{': break;
-    case '}': return i;
+    case '}': 
+        stages_.push_back(stage);
+        return i;
     case ' ': break;
     case 0x09: break;
     case 0x0A: break;
@@ -201,13 +203,11 @@ int Q3Shader::ParseShaderStage(const std::string* shaders, int offset)
       }     
     }
   }
-
-  stages_.push_back(stage);
   return i;
 }
 
 // make the buffer and offset a class members
-std::string Q3Shader::GetToken(const std::string* buffer, int& offset)
+std::string Q3Shader::GetToken(const std::string* buffer, unsigned int& offset)
 {
   int end_pos = GetTokenEndPosition(buffer, offset);
   std::string token = buffer->substr(offset, end_pos-offset);
@@ -215,7 +215,7 @@ std::string Q3Shader::GetToken(const std::string* buffer, int& offset)
   return token;
 }
 
-int Q3Shader::GetTokenEndPosition(const std::string* buffer, int offset)
+unsigned int Q3Shader::GetTokenEndPosition(const std::string* buffer, unsigned int offset)
 {
   while (1) // while buffer[offset] != nullptr
   {
@@ -234,7 +234,7 @@ int Q3Shader::GetTokenEndPosition(const std::string* buffer, int offset)
   }
 }
 
-int Q3Shader::GetNewLinePosition(const std::string* buffer, int offset)
+unsigned int Q3Shader::GetNewLinePosition(const std::string* buffer, unsigned int offset)
 {
   while (1) 
   {

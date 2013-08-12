@@ -12,7 +12,7 @@ void Shader::SetupTextures()
 {
   logger::Log(logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", 0);
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     const Q3ShaderStage& stage = q3_shader_.stages_[i];
     if (stage.isLightmap) 
@@ -34,6 +34,10 @@ void Shader::CompileShader()
 { 
   if (q3_shader_.stages_.size() == 0)
     return;
+
+  SetupTextures();
+  CompileVertexShader();
+  CompileFragmentShader();
 
   std::string name = q3_shader_.name_;
 
@@ -110,7 +114,7 @@ void Shader::CompileVertexShader()
     << "layout(location = 4) out vec2 outLmCoord;\n"
     << "layout(location = 5) out vec4 outColor;\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue; 
@@ -122,7 +126,7 @@ void Shader::CompileVertexShader()
     << "\toutColor = inColor;\n"
     << "\tgl_Position = inProjectionMatrix * inModelMatrix * inPosition;\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue; 
@@ -137,7 +141,7 @@ void Shader::CompileVertexShader()
   vertex_shader_ << "\tfloat t;\n";
   vertex_shader_ << "\tfloat stretch;\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     for (int j = 0; j < MAX_TEXMODS; ++j)
     {
@@ -222,7 +226,7 @@ void Shader::CompileTesselationShader()
     << "layout(location = 4) out vec2 toutLmCoord;\n"
     << "layout(location = 5) out vec4 toutColor;\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue;
@@ -230,7 +234,7 @@ void Shader::CompileTesselationShader()
     tesselation_shader_ << "in vec2 outTexCoord" << i << "[];\n";
   }
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue; 
@@ -244,7 +248,7 @@ void Shader::CompileTesselationShader()
 
   tesselation_shader_ << "vec2 y; vec2 z; vec4 y4; vec4 z4;";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue; 
@@ -271,7 +275,7 @@ void Shader::CompileFragmentShader()
 {
   fragment_shader_ << "#version 410\n"; 
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     fragment_shader_ << "uniform sampler2D texture" << i << "; //" << q3_shader_.stages_[i].map << "\n";
   }
@@ -280,7 +284,7 @@ void Shader::CompileFragmentShader()
   fragment_shader_ << "layout(location = 4) in vec2 toutLmCoord;\n";
   fragment_shader_ << "layout(location = 5) in vec4 toutColor;\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue;
@@ -292,7 +296,7 @@ void Shader::CompileFragmentShader()
 
   fragment_shader_ << "void main() {\n";
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap"))
     {  
@@ -311,7 +315,7 @@ void Shader::CompileFragmentShader()
   std::string dst;
   std::string src;
 
-  for (int i = 0; i < q3_shader_.stages_.size(); ++i)
+  for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     const Q3ShaderStage& stage = q3_shader_.stages_[i];
 

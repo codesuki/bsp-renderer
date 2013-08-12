@@ -1,7 +1,10 @@
 #include "util.h"
 #include "Logger.h"
+#include "messenger.h"
+#include "input.h"
 #include "Renderer.h"
 #include "World.h"
+#include "TextureLoader.h"
 #include "ShaderLoader.h"
 
 #define WIDTH 1280
@@ -10,11 +13,18 @@
 Renderer renderer;
 World world;
 
+bool g_running = true;
+
+void QuitCallback(Message* msg)
+{
+  g_running = false;
+}
+
 int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
   {
-    logger::Log(logger::DEBUG, "Die SDL konnte nicht initialisiert werden (%s)", SDL_GetError());
+    logger::Log(logger::DEBUG, "Could not initialize SDL (%s)", SDL_GetError());
   }
 
   IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
@@ -33,20 +43,17 @@ int main(int argc, char **argv)
   } 
   logger::Log(logger::DEBUG, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
-  glm::vec4 vEyePt( -10.0f, 10.0f, 20.0f, 1.0f );
-
   //font.LoadFont("gfx\\2d\\bigchars.tga");
+  messenger::RegisterReceiver(MESSAGE::QUIT, QuitCallback);
 
-  //Bsp *map = new Bsp("maps\\q3dm6.bsp");
-
-  //Model model("tankjr");
-
+  input::Initialize();
 
   logger::Log(logger::DEBUG, "Loading shader files");
   shaderLoader::LoadAllShaders();
 
   world.LoadLevel("q3dm6");
 
+  //Model model("tankjr");
   //Model model("models\\players\\tankjr\\head.md3");
   //Model model("models\\players\\tankjr\\upper.md3");
   //Model model("models\\players\\tankjr\\lower.md3");
@@ -54,14 +61,25 @@ int main(int argc, char **argv)
   unsigned int ticks = 0;   
   unsigned int delta = 0;
 
-  while (true)
+  Entity player;
+  world.player_ = &player;
+  world.players_.push_back(&player);
+
+  glm::vec4 position( -15.0f, 15.0f, 15.0f, 1.0f );
+  renderer.AddRenderables(world.map_->ComputeVisibleFaces(position));
+
+  while (g_running)
   {
     delta = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks(); 
 
+    input::Update();
     world.Update();
     renderer.RenderFrame((float)delta/1000);
   }
+
+  shaderLoader::Deinitialize();
+  textureLoader::Deinitialize();
 
   IMG_Quit();
   SDL_Quit();

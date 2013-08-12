@@ -82,6 +82,9 @@ void Renderer::Setup3DRendering()
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   modelmatrix_ = GetCameraMatrixFromEntity(*world.player_);
+
+  modelmatrix_ = glm::lookAt(glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
+
   modelmatrix_ *= quake2ogl;
   //g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
@@ -104,8 +107,8 @@ void Renderer::RenderFrame(float time)
   // draw scene
   Setup3DRendering();
 
-  glBindBuffer(GL_ARRAY_BUFFER, bsp_->vboId);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bsp_->iboId);
+  glBindBuffer(GL_ARRAY_BUFFER, world.map_->vboId);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, world.map_->iboId);
   glEnableVertexAttribArray(2);
 
   for (unsigned int i = 0; i < renderables_.size(); ++i) 
@@ -194,9 +197,15 @@ void Renderer::FinishShader()
 
 void Renderer::SetupShader(Shader& shader, int lm_index)
 { 
+  if (current_shader_ != &shader)
+  {
+    glUseProgram(shader.shader_);
+    current_shader_ = &shader;
+  }  
+
   // the light map could change even though we have the same shaders
   // check and set new lightmap, leave everthing else the same
-  if (&shader == current_shader_)
+  if (&shader == current_shader_ && lm_index != -1)
   {
     if (lm_index == current_lightmap_) return;
 
@@ -220,8 +229,16 @@ void Renderer::SetupShader(Shader& shader, int lm_index)
     // shaders can only blend with textures
     //if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
     //{
-      Blend(true);
-      BlendFunc(shader.q3_shader_.stages_[0].blendfunc[0], shader.q3_shader_.stages_[0].blendfunc[1]);
+      
+      if (shader.q3_shader_.stages_.size() > 0) 
+      {
+        Blend(true);
+        BlendFunc(shader.q3_shader_.stages_[0].blendfunc[0], shader.q3_shader_.stages_[0].blendfunc[1]);
+      }
+      else
+        Blend(false);
+
+        //BlendFunc(GL_ONE, GL_ZERO);
     //}
 
   for (int i = 0; i < 8; ++i)
@@ -275,7 +292,7 @@ void Renderer::RenderPolygon(bsp_face* face)
   const bsp_face &current_face = *face;
   const int offset = current_face.vertex;
 
-  if (offset >= bsp_->num_vertexes_) return;
+  if (offset >= world.map_->num_vertexes_) return;
 
   Shader& shader = *current_shader_;
 

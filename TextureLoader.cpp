@@ -138,4 +138,17 @@ namespace textureLoader
   {
     return lightmaps_[id];
   }
+
+  void Deinitialize()
+  {
+    for (auto texture : textures_)
+    {
+      glDeleteTextures(1, &texture.second);
+    }
+
+    for (auto texture : lightmaps_)
+    {
+      glDeleteTextures(1, &texture);
+    }
+  }
 }

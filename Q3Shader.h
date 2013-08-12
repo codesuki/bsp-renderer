@@ -93,6 +93,7 @@ struct Q3ShaderStage {
   Q3ShaderStage() 
   {
     texture = 0;
+    isLightmap = false;
     blendfunc[0] = GL_ONE;
     blendfunc[1] = GL_ZERO;
     alphafunc = 0;
@@ -110,7 +111,7 @@ public:
   ~Q3Shader(void);
 
   void ParseShader();
-  int ParseShaderStage(const std::string* shaders, int offset);
+  unsigned int ParseShaderStage(const std::string* shaders, unsigned int offset);
 
   int GetAlphaFunc(std::string name);
   int GetBlendFunc(std::string name);
@@ -118,10 +119,10 @@ public:
 
   std::string BlendFuncToString(int blend_func);
 
-  std::string GetToken(const std::string* buffer, int& offset);
+  std::string GetToken(const std::string* buffer, unsigned int& offset);
 
-  static int GetNewLinePosition(const std::string* buffer, int offset);
-  int GetTokenEndPosition(const std::string* buffer, int offset);
+  static unsigned int GetNewLinePosition(const std::string* buffer, unsigned int offset);
+  unsigned int GetTokenEndPosition(const std::string* buffer, unsigned int offset);
 
   // making this objects instead of pointers we have some additional copying during load time 
   // but don't need to worry about freeing the memory

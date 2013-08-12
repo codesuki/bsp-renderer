@@ -16,7 +16,7 @@ enum class MESSAGE
 };
 
 // eventually replace bool with message
-typedef int (*CallbackType)(Message*);
+typedef void (*CallbackType)(Message*);
 
 namespace messenger
 {

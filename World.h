@@ -15,11 +15,11 @@ public:
 
   void Update();
 
-  Bsp map_;
+  Bsp* map_;
   Entity* player_;
 
-private:
-  std::vector<Entity> entities_;
-  std::vector<Entity> players_;
+
+  std::vector<Entity*> entities_;
+  std::vector<Entity*> players_;
 };
 

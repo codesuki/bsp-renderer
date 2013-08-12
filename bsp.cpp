@@ -366,15 +366,13 @@ std::vector<bsp_face*> Bsp::ComputeVisibleFaces(const glm::vec4& camera_position
   int leafindex = FindLeaf(camera_position);
   int cluster = leafs_[leafindex].cluster;
 
-  std::map<std::string, Q3Shader*>::iterator it;
-
   for (int i = num_leafs_-1; i >= 0; --i)
   {
-    if (!IsClusterVisible(cluster, leafs_[i].cluster)) 
-    {
-      ++num_cluster_not_visible_;
-      continue;
-    }
+    //if (!IsClusterVisible(cluster, leafs_[i].cluster)) 
+    //{
+    //  ++num_cluster_not_visible_;
+    //  continue;
+    //}
 
     //glm::vec3 min((float)leafs_[i].mins[0], (float)leafs_[i].mins[1], (float)leafs_[i].mins[2]);
     //glm::vec3 max((float)leafs_[i].maxs[0], (float)leafs_[i].maxs[1], (float)leafs_[i].maxs[2]);

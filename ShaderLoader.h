@@ -5,6 +5,7 @@
 
 namespace shaderLoader
 {
+  void Deinitialize();
   int LoadAllShaders();
   int GetShader(std::string name);
   Shader& GetShader(unsigned int id);

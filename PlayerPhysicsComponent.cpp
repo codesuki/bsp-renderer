@@ -41,7 +41,7 @@ void PlayerPhysicsComponent::Update(void)
 
   glm::vec4 plane;
 
-  float ground_fraction = world.map_.trace(start, ground, &plane);
+  float ground_fraction = world.map_->trace(start, ground, &plane);
   start.z -= 0.5f;
 
   bool on_ground = false;
@@ -61,7 +61,7 @@ void PlayerPhysicsComponent::Update(void)
   //if (!g_noclip) 
   {
     accel.z += -9.8f;
-    fraction = world.map_.trace(start, end, &plane);
+    fraction = world.map_->trace(start, end, &plane);
   }
 
   // + velocity... velocity += accel

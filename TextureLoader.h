@@ -7,6 +7,7 @@
 
 namespace textureLoader
 {
+  void Deinitialize();
   int LoadTexture(std::string name, bool clamp);
   int LoadLightmap(bsp_lightmap& lightmap);
   int GetTexture(std::string name, bool clamp);

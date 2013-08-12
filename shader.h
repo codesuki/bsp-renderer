@@ -7,7 +7,7 @@
 class Shader
 {
 public:
-  Shader(const Q3Shader& q3_shader) : q3_shader_(q3_shader) {};
+  Shader(const Q3Shader& q3_shader) : q3_shader_(q3_shader), lightmap_stage_(-1) { CompileShader(); };
   ~Shader(void);
 
   void CompileShader();
