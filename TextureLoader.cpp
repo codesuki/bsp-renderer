@@ -1,24 +1,29 @@
 #include "TextureLoader.h"
 
-namespace TextureLoader
+namespace textureLoader
 {
-  // try to load jpg, fall back to tga
-  int LoadTexture(std::string filename, Q3ShaderStage* shader) 
+  namespace 
+  {
+    std::map<std::string, unsigned int> textures_;
+    std::vector<unsigned int> lightmaps_;
+  }
+
+  int LoadTexture(std::string name, bool clamp) 
   {                                             
-    if (filename.length() == 0) 
+    if (name.length() == 0) 
     {
       return -1;
     }
 
-    if (filename.find('.') != std::string::npos)
+    if (name.find('.') != std::string::npos)
     {
-      filename.erase(filename.end()-4, filename.end());
+      name.erase(name.end()-4, name.end());
     }
 
-    std::string filename_tga = filename;
+    std::string filename_tga = name;
     filename_tga.append(".tga");
 
-    std::string filename_jpg = filename;
+    std::string filename_jpg = name;
     filename_jpg.append(".jpg");
 
     SDL_Surface *image;
@@ -41,16 +46,12 @@ namespace TextureLoader
     GLenum texture_format;
     GLint num_colors = image->format->BytesPerPixel;
 
-    shader->translucent = false;
-
     if (num_colors == 4) // contains an alpha channel
     {
       if (image->format->Rmask == 0x000000ff)
         texture_format = GL_RGBA;
       else
         texture_format = GL_BGRA;
-
-      shader->translucent = true;
     } 
     else if (num_colors == 3) // no alpha channel
     {
@@ -61,12 +62,13 @@ namespace TextureLoader
     }
 
     // Have OpenGL generate a texture object handle for us
-    glGenTextures(1, &(shader->texture));
+    unsigned int texture;
+    glGenTextures(1, &texture);
 
     // Bind the texture object
-    glBindTexture(GL_TEXTURE_2D, shader->texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-    if (shader->clamp)
+    if (clamp)
     {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -87,18 +89,21 @@ namespace TextureLoader
 
     SDL_FreeSurface(image);
 
+    textures_[name] = texture;
+
     return 0;
   }
 
-  int LoadLightmap(bsp_lightmap& lightmap, GLuint* texture)
+  int LoadLightmap(bsp_lightmap& lightmap)
   {
     SDL_Surface *image = SDL_CreateRGBSurfaceFrom(static_cast<void*>(&lightmap), 128, 128, 24, 128*3, 0, 0, 0, 0);
 
     // Have OpenGL generate a texture object handle for us
-    glGenTextures(1, texture);
+    unsigned int texture;
+    glGenTextures(1, &texture);
 
     // Bind the texture object
-    glBindTexture(GL_TEXTURE_2D, *texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     // Set the texture's stretching properties
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -110,6 +115,27 @@ namespace TextureLoader
 
     SDL_FreeSurface(image);
 
+    lightmaps_.push_back(texture);
+
     return 0;
+  }
+
+  int GetTexture(std::string texture, bool clamp)
+  {
+    int texture_id = textures_[texture];
+
+    if (texture_id == 0)
+    {
+      LoadTexture(texture, clamp);
+    }
+
+    texture_id = textures_[texture];
+
+    return texture_id;
+  }
+
+  int GetLightmap(unsigned int id)
+  {
+    return lightmaps_[id];
   }
 }

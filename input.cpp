@@ -5,6 +5,7 @@
 #include "SDL.h"
 
 #include "messenger.h"
+#include "Message.h"
 
 namespace input {
   namespace 
@@ -12,7 +13,7 @@ namespace input {
     std::map<unsigned int, MESSAGE> keymap_;
   }
 
-  int Initialize()
+  void Initialize()
   {
     keymap_[SDLK_ESCAPE] = MESSAGE::QUIT; 
 
@@ -25,7 +26,7 @@ namespace input {
     SDL_ShowCursor(SDL_DISABLE);
   }
 
-  int Update() 
+  void Update() 
   {
     SDL_PumpEvents();
     Uint8 *keystate = SDL_GetKeyState(NULL);
@@ -34,7 +35,7 @@ namespace input {
     {
       if (keystate[kv.first]) 
       {
-        messenger::BroadcastMessage(kv.second);
+        messenger::BroadcastMessage(kv.second, nullptr);
       }
     }
 
@@ -44,9 +45,6 @@ namespace input {
     float rx = ((((float)x)-400.f)/100.f);
     float ry = ((((float)y)-300.f)/100.f);
 
-    mouselookmessage.rx = rx;
-    mouselookmessage.ry = ry;
-
-    messenger::BroadcastMessage(MESSAGE::CMD_MOUSELOOK, mouselookmessage);
+    messenger::BroadcastMessage(MESSAGE::CMD_MOUSELOOK, &MouseMoveMessage(rx, ry));
   }
 }

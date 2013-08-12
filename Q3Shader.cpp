@@ -1,15 +1,19 @@
 #include "Q3Shader.h"
 
 #include <string>
-#include <GL/GL.h>
+
+#include "util.h"
 
 Q3Shader::~Q3Shader(void)
 {
 }
 
-int Q3Shader::ParseShaderStage(const std::string* shaders, int offset, Q3ShaderStage* stage)
+int Q3Shader::ParseShaderStage(const std::string* shaders, int offset)
 {
-  for (int i = offset; i < shaders->length(); ++i) 
+  Q3ShaderStage stage;
+
+  int i = offset;
+  for (; i < shaders->length(); ++i) 
   {
     switch ((*shaders)[i]) 
     {
@@ -33,15 +37,15 @@ int Q3Shader::ParseShaderStage(const std::string* shaders, int offset, Q3ShaderS
       {
         token = GetToken(shaders, i);
         // maybe trim another way, just skip all spaces until next letter after GetToken
-        stage->map = token;
-        stage->map.erase(0, stage->map.find_first_not_of(' '));
+        stage.map = token;
+        stage.map.erase(0, stage.map.find_first_not_of(' '));
       } 
       else if (strcasecmp("clampmap", token.c_str()) == 0)
       {
-        stage->clamp = true;
+        stage.clamp = true;
         token = GetToken(shaders, i);
-        stage->map = token;
-        stage->map.erase(0, stage->map.find_first_not_of(' ')); 
+        stage.map = token;
+        stage.map.erase(0, stage.map.find_first_not_of(' ')); 
       } 
       else if (strcasecmp("blendfunc", token.c_str()) == 0) 
       {
@@ -51,60 +55,60 @@ int Q3Shader::ParseShaderStage(const std::string* shaders, int offset, Q3ShaderS
           token.compare("Add") == 0 || 
           token.compare("GL_add") == 0) 
         {
-          stage->blendfunc[0] = GetBlendFunc("GL_ONE");
-          stage->blendfunc[1] = GetBlendFunc("GL_ONE");
+          stage.blendfunc[0] = GetBlendFunc("GL_ONE");
+          stage.blendfunc[1] = GetBlendFunc("GL_ONE");
         } 
         else if (token.compare("filter") == 0)
         {
-          stage->blendfunc[0] = GetBlendFunc("GL_DST_COLOR");
-          stage->blendfunc[1] = GetBlendFunc("GL_ONE");
+          stage.blendfunc[0] = GetBlendFunc("GL_DST_COLOR");
+          stage.blendfunc[1] = GetBlendFunc("GL_ONE");
         } 
         else if (token.compare("blend") == 0) 
         {
-          stage->blendfunc[0] = GetBlendFunc("GL_SRC_ALPHA");
-          stage->blendfunc[1] = GetBlendFunc("GL_ONE_MINUS_SRC_ALPHA");
+          stage.blendfunc[0] = GetBlendFunc("GL_SRC_ALPHA");
+          stage.blendfunc[1] = GetBlendFunc("GL_ONE_MINUS_SRC_ALPHA");
         } 
         else 
         {
-          stage->blendfunc[0] = GetBlendFunc(token);
+          stage.blendfunc[0] = GetBlendFunc(token);
           token = GetToken(shaders, i);
-          stage->blendfunc[1] = GetBlendFunc(token);
+          stage.blendfunc[1] = GetBlendFunc(token);
         }
       } 
       else if (strcasecmp("alphafunc", token.c_str()) == 0) 
       {
         token = GetToken(shaders, i);
-        stage->alphafunc = GetAlphaFunc(token);
+        stage.alphafunc = GetAlphaFunc(token);
       } 
       else if (strcasecmp("rgbGen", token.c_str()) == 0) 
       {
         token = GetToken(shaders, i);
         if (strcasecmp("identity", token.c_str()) == 0)
         {
-          stage->rgbgen = RGBGEN::IDENTITY;
+          stage.rgbgen = RGBGEN::IDENTITY;
         }
         else if (strcasecmp("vertex", token.c_str()) == 0)
         {
-          stage->rgbgen = RGBGEN::VERTEX;
+          stage.rgbgen = RGBGEN::VERTEX;
         }
         else if (strcasecmp("wave", token.c_str()) == 0) 
         {
-          stage->rgbgen = RGBGEN::WAVE;
+          stage.rgbgen = RGBGEN::WAVE;
 
           token = GetToken(shaders, i);
-          stage->rgbwave.type = GetWaveFunc(token); 
+          stage.rgbwave.type = GetWaveFunc(token); 
 
           token = GetToken(shaders, i);
-          stage->rgbwave.base = atof(token.c_str());
+          stage.rgbwave.base = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->rgbwave.amplitude = atof(token.c_str());
+          stage.rgbwave.amplitude = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->rgbwave.phase = atof(token.c_str()); 
+          stage.rgbwave.phase = atof(token.c_str()); 
 
           token = GetToken(shaders, i);
-          stage->rgbwave.frequency = atof(token.c_str()); 
+          stage.rgbwave.frequency = atof(token.c_str()); 
         } 
       } 
       else if (strcasecmp("tcmod", token.c_str()) == 0) 
@@ -112,91 +116,93 @@ int Q3Shader::ParseShaderStage(const std::string* shaders, int offset, Q3ShaderS
         token = GetToken(shaders, i);
         if (strcasecmp("scroll", token.c_str()) == 0) 
         {
-          stage->texmods[stage->num_texmods].type = TCMOD::SCROLL;
+          stage.texmods[stage.num_texmods].type = TCMOD::SCROLL;
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].scroll[0] = atof(token.c_str());
+          stage.texmods[stage.num_texmods].scroll[0] = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].scroll[1] = atof(token.c_str());
+          stage.texmods[stage.num_texmods].scroll[1] = atof(token.c_str());
         } 
         else if (strcasecmp("scale", token.c_str()) == 0) 
         {
-          stage->texmods[stage->num_texmods].type = TCMOD::SCALE;
+          stage.texmods[stage.num_texmods].type = TCMOD::SCALE;
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].scale[0] = atof(token.c_str());
+          stage.texmods[stage.num_texmods].scale[0] = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].scale[1] = atof(token.c_str());
+          stage.texmods[stage.num_texmods].scale[1] = atof(token.c_str());
         } 
         /*      else if (strcasecmp("turb", token.c_str()) == 0) 
         {
-        stage->texmods[stage->num_texmods++].type = TCMOD_TURB;
+        stage.texmods[stage.num_texmods++].type = TCMOD_TURB;
 
         end_pos = get_token_end_pos(shaders, i);
         token = shaders->substr(i, end_pos-i);
         i = ++end_pos;
-        stage->texmods[stage->num_texmods].scale[0] = atof(token.c_str());
+        stage.texmods[stage.num_texmods].scale[0] = atof(token.c_str());
 
         end_pos = get_token_end_pos(shaders, i);
         token = shaders->substr(i, end_pos-i);
         i = ++end_pos;
-        stage->scale[1] = atof(token.c_str());
+        stage.scale[1] = atof(token.c_str());
         }  */  
         else if (strcasecmp("transform", token.c_str()) == 0) 
         {
-          stage->texmods[stage->num_texmods].type = TCMOD::TRANSFORM;           
+          stage.texmods[stage.num_texmods].type = TCMOD::TRANSFORM;           
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].matrix[0][0] = atof(token.c_str());
+          stage.texmods[stage.num_texmods].matrix[0][0] = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].matrix[0][1] = atof(token.c_str());    
+          stage.texmods[stage.num_texmods].matrix[0][1] = atof(token.c_str());    
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].matrix[1][0] = atof(token.c_str());       
+          stage.texmods[stage.num_texmods].matrix[1][0] = atof(token.c_str());       
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].matrix[1][1] = atof(token.c_str()); 
+          stage.texmods[stage.num_texmods].matrix[1][1] = atof(token.c_str()); 
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].translate[0] = atof(token.c_str()); 
+          stage.texmods[stage.num_texmods].translate[0] = atof(token.c_str()); 
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].translate[1] = atof(token.c_str());    
+          stage.texmods[stage.num_texmods].translate[1] = atof(token.c_str());    
 
         }   
         else if (strcasecmp("stretch", token.c_str()) == 0) 
         {
-          stage->texmods[stage->num_texmods].type = TCMOD::STRETCH;  
+          stage.texmods[stage.num_texmods].type = TCMOD::STRETCH;  
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].wave.type = GetWaveFunc(token); 
+          stage.texmods[stage.num_texmods].wave.type = GetWaveFunc(token); 
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].wave.base = atof(token.c_str());
+          stage.texmods[stage.num_texmods].wave.base = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].wave.amplitude = atof(token.c_str());
+          stage.texmods[stage.num_texmods].wave.amplitude = atof(token.c_str());
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].wave.phase = atof(token.c_str()); 
+          stage.texmods[stage.num_texmods].wave.phase = atof(token.c_str()); 
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].wave.frequency = atof(token.c_str()); 
+          stage.texmods[stage.num_texmods].wave.frequency = atof(token.c_str()); 
         } 
         else if (strcasecmp("rotate", token.c_str()) == 0) 
         {
-          stage->texmods[stage->num_texmods].type = TCMOD::ROTATE;
+          stage.texmods[stage.num_texmods].type = TCMOD::ROTATE;
 
           token = GetToken(shaders, i);
-          stage->texmods[stage->num_texmods].rotate_speed = atof(token.c_str());
+          stage.texmods[stage.num_texmods].rotate_speed = atof(token.c_str());
         }                 
-        stage->num_texmods++;
+        stage.num_texmods++;
       }     
     }
   }
+
+  stages_.push_back(stage);
   return i;
 }
 
@@ -206,11 +212,12 @@ std::string Q3Shader::GetToken(const std::string* buffer, int& offset)
   int end_pos = GetTokenEndPosition(buffer, offset);
   std::string token = buffer->substr(offset, end_pos-offset);
   offset = ++end_pos;
+  return token;
 }
 
 int Q3Shader::GetTokenEndPosition(const std::string* buffer, int offset)
 {
-  while (1) 
+  while (1) // while buffer[offset] != nullptr
   {
     switch ((*buffer)[offset]) 
     {

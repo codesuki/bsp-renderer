@@ -1,17 +1,25 @@
 #pragma once
 
-// something like a scenegraph
+#include <vector>
+
+#include "bsp.h"
+#include "Entity.h"
+
 class World
 {
 public:
   World(void);
   ~World(void);
 
-  // trace funcs
+  void LoadLevel(std::string name);
+
+  void Update();
+
+  Bsp map_;
+  Entity* player_;
 
 private:
-  // map
-  // entities
-  // players
+  std::vector<Entity> entities_;
+  std::vector<Entity> players_;
 };
 

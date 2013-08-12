@@ -1,13 +1,14 @@
 #include "util.h"
-#include "bsp.h"
-#include "camera.h"
-#include "frustum.h"
 #include "Logger.h"
-#include "Font.h"
-#include "Model.h"
+#include "Renderer.h"
+#include "World.h"
+#include "ShaderLoader.h"
 
 #define WIDTH 1280
 #define HEIGHT 720
+
+Renderer renderer;
+World world;
 
 int main(int argc, char **argv)
 {
@@ -34,13 +35,17 @@ int main(int argc, char **argv)
 
   glm::vec4 vEyePt( -10.0f, 10.0f, 20.0f, 1.0f );
 
-  font.LoadFont("gfx\\2d\\bigchars.tga");
+  //font.LoadFont("gfx\\2d\\bigchars.tga");
 
-  Bsp *map = new Bsp("maps\\q3dm6.bsp");
+  //Bsp *map = new Bsp("maps\\q3dm6.bsp");
 
-  Model model("tankjr");
+  //Model model("tankjr");
 
-  World world;
+
+  logger::Log(logger::DEBUG, "Loading shader files");
+  shaderLoader::LoadAllShaders();
+
+  world.LoadLevel("q3dm6");
 
   //Model model("models\\players\\tankjr\\head.md3");
   //Model model("models\\players\\tankjr\\upper.md3");
@@ -54,14 +59,12 @@ int main(int argc, char **argv)
     delta = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks(); 
 
-    world.update();
-
-    renderer.render();
-          
-
+    world.Update();
+    renderer.RenderFrame((float)delta/1000);
   }
 
   IMG_Quit();
   SDL_Quit();
+
   return 0;
 }

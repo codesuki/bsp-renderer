@@ -16,6 +16,8 @@ public:
   void CompileFragmentShader();
   void CompileFontShader();
 
+  void SetupTextures();
+
   GLuint CreateShader(GLenum shader_type, const std::string& shader_file);
   GLuint CreateProgram(const std::vector<GLuint>& shader_list);
 
@@ -35,6 +37,9 @@ public:
   unsigned int tex_coord_idx_;
   unsigned int lm_coord_idx_;
   unsigned int color_idx_;
+
+  unsigned int lightmap_stage_;
+  unsigned int texture_id_[8];
 };
 
 #endif
