@@ -11,6 +11,8 @@
 #include <string>
 #include <sstream>
 
+#include "glew/glew.h"
+
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -18,8 +20,6 @@
 #include "glm/gtc/type_ptr.hpp"
 
 //#define GL_GLEXT_PROTOTYPES
-
-#include "glew/glew.h"
 
 #include "SDL.h"
 //#include "SDL_opengl.h"
@@ -47,6 +47,6 @@ static const GLfloat quake2oglMatrix[16] =
 0, 0, 0, 1};
 
 //static const glm::mat4 quake2ogl(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-static const glm::mat4 quake2ogl(0.0f, 0.0f, -1.0f, 0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+
 
 #endif

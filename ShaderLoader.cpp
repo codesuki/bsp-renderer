@@ -1,14 +1,18 @@
 #include "ShaderLoader.h"
 
+#include <map>
 #include "boost/filesystem.hpp"
 
 #include "Logger.h"
 #include "Q3Shader.h"
 
-namespace shaderloader
+namespace shaderLoader
 {
   namespace {
-    std::string shaders_ = "";
+    std::map<std::string, Shader*> shaders_by_name_;
+    std::vector<Shader*> shaders_;
+
+    std::string shaderbuffer_ = "";
     int offset_ = 0;
 
     int LoadShaderFile(std::string file_name, int file_size)
@@ -19,7 +23,7 @@ namespace shaderloader
       ifs.read(buffer, file_size);
       ifs.close();
 
-      shaders_.append(buffer, ifs.gcount());
+      shaderbuffer_.append(buffer, ifs.gcount());
 
       if (buffer) delete [] buffer;
 
@@ -50,14 +54,15 @@ namespace shaderloader
       std::string name = "";
       Q3Shader* current_shader;
 
-      for (; offset_ < shaders_.length(); ++offset_) 
+      for (; offset_ < shaderbuffer_.length(); ++offset_) 
       {
-        switch (shaders_[offset_]) 
+        switch (shaderbuffer_[offset_]) 
         {
         case '/':
-          if (shaders_[offset_+1] == '/') 
+          if (shaderbuffer_[offset_+1] == '/') 
           {
-            offset_ = Q3Shader::GetNewLinePosition(&shaders_, offset_);
+            // TODO take this out of Q3Shader
+            offset_ = Q3Shader::GetNewLinePosition(&shaderbuffer_, offset_);
             break;
           } 
           else 
@@ -69,47 +74,92 @@ namespace shaderloader
           if (is_shader == true) 
           {
             // sub-shader found
-            Q3ShaderStage* stage = new Q3ShaderStage();
-            offset_ = current_shader->ParseShaderStage(&shaders_, offset_, stage);
-            current_shader->stages.push_back(stage);
+            offset_ = current_shader->ParseShaderStage(&shaderbuffer_, offset_);
           } 
           else 
           {
+            // wahrscheinlich doch nur als ptr möglich
             current_shader = new Q3Shader(name);
             is_shader = true;
           }
           break;
         case '}':
-          logger::Log(logger::DEBUG, "Read shader %s (%i stages)", current_shader->name_.c_str(), current_shader->stages.size());
+          logger::Log(logger::DEBUG, "Read shader %s (%i stages)", current_shader->name_.c_str(), current_shader->stages_.size());
           return current_shader;
         case ' ': break;
         case 0x09: break;
         case 0x0A: break;
         case 0x0D: break;
         default:
-          name.append(1, shaders_[offset_]);
+          name.append(1, shaderbuffer_[offset_]);
         }
       }
+      return nullptr;
+    }
+
+    Shader* CreateDefaultShader(std::string name)
+    {
+      logger::Log(logger::DEBUG, "No shader for texture available. Creating default shader and loading texture...");
+
+      Q3Shader* q3_shader = new Q3Shader(name);
+
+      Q3ShaderStage stage = Q3ShaderStage();
+      stage.map = name;
+      q3_shader->stages_.push_back(stage);
+
+      //stage = Q3ShaderStage();
+      //stage.map = "$lightmap";
+      //stage.blendfunc[0] = GL_DST_COLOR;
+      //stage.blendfunc[1] = GL_ZERO;
+      //q3_shader.stages_.push_back(stage);	
+
+      Shader* shader = new Shader(*q3_shader);
+
+      shaders_by_name_[name] = shader;
+
+      return shader;
     }
   }
 
-  std::vector<Shader> LoadAllShaders()
+  int GetShader(std::string name)
   {
-    // load all shader files into one big string (shaders_)
+    Shader* shader;
+
+    auto it = shaders_by_name_.find(name);
+    if (it == shaders_by_name_.end())
+    {
+      shader = CreateDefaultShader(name);
+    }
+    else
+    {
+      shader = it->second;
+    }
+
+    shaders_.push_back(shader);
+
+    return 0;
+  }
+
+  Shader& GetShader(unsigned int id)
+  {
+    return *shaders_[id];
+  }
+
+  int LoadAllShaders()
+  {
+    // load all shader files into one big string (shaderbuffer_)
     LoadAllShaderFiles();
 
     // break it up into single shaders
-    std::vector<Shader> shaders;
-
     Q3Shader* q3_shader;
-
     while (q3_shader = ExtractOneShader(), q3_shader != nullptr)
     {
-      Shader ogl_shader(q3_shader);
-      shaders.push_back(ogl_shader);
+      Shader* ogl_shader = new Shader(*q3_shader);
+      shaders_by_name_[q3_shader->name_] = ogl_shader;
+      //delete q3_shader; // not needed after being converted
     }
 
-    return shaders;
+    return 0;
   }
 }
 

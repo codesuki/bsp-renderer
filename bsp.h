@@ -199,13 +199,9 @@ public:
 
   Bsp(std::string filename);
 
-  int find_leaf(const glm::vec4& camera_position);
-  void get_visible_faces(const glm::vec4& camera_position);
-
-  bool is_cluster_visible(int cluster, int test_cluster);
-
-  void load_shaders();
-
+  int FindLeaf(const glm::vec4& camera_position);
+  std::vector<bsp_face*> Bsp::ComputeVisibleFaces(const glm::vec4& camera_position);
+  bool IsClusterVisible(int cluster, int test_cluster);
 
   void load_lightmaps();
 
@@ -213,17 +209,10 @@ public:
   void check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end);
   void check_brush(const bsp_brush& brush, glm::vec4 start, glm::vec4 end);
 
-  GLuint* lightmaps_;
   GLuint vboId;
   GLuint iboId;
 
-  std::map<std::string, Q3Shader*> shaders_;
-  float time_;
-
-  std::bitset<10000> already_visible_;
   std::map<bsp_face*, std::vector<bezier*> > patches_;
-  std::vector<bsp_face*> opaque_faces_;
-  std::vector<bsp_face*> translucent_faces_;
 
   // some status variables for outputting info
   int num_cluster_not_visible_;

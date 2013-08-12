@@ -3,9 +3,11 @@
 
 #include "Shader.h"
 
-namespace shaderloader
+namespace shaderLoader
 {
-  std::vector<Shader> LoadAllShaders();
+  int LoadAllShaders();
+  int GetShader(std::string name);
+  Shader& GetShader(unsigned int id);
 }
 
 #endif

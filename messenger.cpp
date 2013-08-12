@@ -3,30 +3,34 @@
 #include <map>
 #include <vector>
 
+#include "Message.h"
+
 namespace messenger
 {
   namespace 
   {
-    std::map<MESSAGE, std::vector<CallbackType>> keymap_;
+    std::map<MESSAGE, std::vector<CallbackType>> receivers_;
   }
 
   int RegisterReceiver(MESSAGE msg, CallbackType callback) 
   {
-    std::vector<CallbackType>& receivers = keymap_[msg];
-    receivers.push_back(callback);
+    receivers_[msg].push_back(callback);
+
+    return receivers_[msg].size();
   }
 
   int UnregisterReceiver()
   {
+    return 0;
   }
 
-  int BroadcastMessage(MESSAGE msg)
+  int BroadcastMessage(MESSAGE type, Message* msg)
   {
-    const std::vector<CallbackType>& receivers = keymap_[msg];
-
-    for (CallbackType receiver : receivers) 
+    for (CallbackType receiver : receivers_[type]) 
     {
-      receiver(true);
+      receiver(msg);
     }
+
+    return 0;
   }
 }

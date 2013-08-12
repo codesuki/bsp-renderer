@@ -7,8 +7,10 @@
 
 namespace textureLoader
 {
-  int LoadTexture(std::string filename, Q3ShaderStage* shader);
-  int LoadLightmap(bsp_lightmap& lightmap, GLuint* texture);
+  int LoadTexture(std::string name, bool clamp);
+  int LoadLightmap(bsp_lightmap& lightmap);
+  int GetTexture(std::string name, bool clamp);
+  int GetLightmap(unsigned int id);
 }
 
 #endif /* _TEXTURELOADER_H_ */

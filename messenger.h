@@ -1,6 +1,8 @@
 #ifndef _MESSENGER_H_
 #define _MESSENGER_H_
 
+#include "Message.h"
+
 enum class MESSAGE
 {
   CMD_FORWARD,
@@ -14,14 +16,14 @@ enum class MESSAGE
 };
 
 // eventually replace bool with message
-typedef int (*CallbackType)(bool);
+typedef int (*CallbackType)(Message*);
 
 namespace messenger
 {
   int RegisterReceiver(MESSAGE msg, CallbackType callback);
   int UnregisterReceiver();
 
-  int BroadcastMessage(MESSAGE msg);
+  int BroadcastMessage(MESSAGE type, Message* msg);
 }
 
 #endif

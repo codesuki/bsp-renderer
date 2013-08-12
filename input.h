@@ -3,6 +3,8 @@
 
 namespace input 
 {
+  void Initialize();
+  void Update();
 }
 
 #endif

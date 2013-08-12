@@ -5,7 +5,8 @@
 class Component
 {
 public:
-  virtual ~Component(void) = 0;
-  virtual int ReceiveMessage(Message msg) = 0;
+  virtual ~Component(void) {};
+  virtual void ReceiveMessage(Message& msg) = 0;
+  virtual void Update() = 0;
 };
 

@@ -1,7 +1,11 @@
 #include "Renderer.h"
 
 #include "util.h"
-#include "bsp.h"
+#include "TextureLoader.h"
+#include "ShaderLoader.h"
+#include "World.h"
+
+extern World world;
 
 Renderer::Renderer(void)
 {
@@ -12,6 +16,48 @@ Renderer::~Renderer(void)
 {
 }
 
+void Renderer::AddRenderables(std::vector<bsp_face*> renderables)
+{
+  renderables_ = renderables;
+}
+
+glm::mat4 Renderer::GetCameraMatrixFromEntity(Entity& entity)
+{
+  // this is quake3 coordinate system.
+  entity.look_ = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+  entity.right_ = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+  entity.up_ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+  glm::mat4 matrix(1.0f);
+
+  matrix = glm::rotate(matrix, entity.yaw_, glm::vec3(entity.up_));
+
+  entity.right_ = matrix * entity.right_;
+  entity.look_ = matrix * entity.look_;
+
+  matrix = glm::mat4(1.0f);
+  matrix = glm::rotate(matrix, entity.pitch_, glm::vec3(entity.right_));
+
+  entity.look_ = matrix * entity.look_;
+  entity.up_ = matrix * entity.up_;
+
+  // switch to opengl coordinate system for view matrix calculation
+  glm::vec4 right_ogl = quake2ogl * entity.right_;
+  glm::vec4 look_ogl = quake2ogl * entity.look_;
+  glm::vec4 up_ogl = quake2ogl * entity.up_;
+  glm::vec4 position_ogl = quake2ogl * entity.position_;
+
+    //return glm::mat4(look_.x, right_.x, up_.x, 0.0f, 
+    //look_.y, right_.y, up_.y, 0.0f,
+    //look_.z, right_.z, up_.z, 0.0f, 
+    //glm::dot(-position_, look_), glm::dot(-position_, right_), glm::dot(-position_, up_), 1.0f);
+
+  return glm::mat4(right_ogl.x, up_ogl.x, look_ogl.x, 0.0f, 
+    right_ogl.y, up_ogl.y, look_ogl.y, 0.0f,
+    right_ogl.z, up_ogl.z, look_ogl.z, 0.0f, 
+    glm::dot(-position_ogl, right_ogl), glm::dot(-position_ogl, up_ogl), glm::dot(-position_ogl, look_ogl), 1.0f);
+}
+
 void Renderer::Initialize()
 {
   glEnable(GL_DEPTH_TEST); 
@@ -20,15 +66,10 @@ void Renderer::Initialize()
   glEnable(GL_CULL_FACE);
   glFrontFace(GL_CW);
 
-#ifndef __USE_SHADERS__
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
-#endif
+  glViewport(0, 0, screen_width_, screen_height_);
 
-  glViewport(0, 0, WIDTH, HEIGHT);
-
-  projectionmatrix = glm::perspective(90.0f, (float)WIDTH/(float)HEIGHT, 1.0f, 10000.f);
-  orthomatrix = glm::ortho(0.0f, (float)WIDTH, 0.0f, (float)HEIGHT, -1.0f, 1.0f);
+  projectionmatrix_ = glm::perspective(90.0f, (float)screen_width_/(float)screen_height_, 1.0f, 10000.f);
+  orthomatrix_ = glm::ortho(0.0f, (float)screen_width_, 0.0f, (float)screen_height_, -1.0f, 1.0f);
 }
 
 void Renderer::SetupFrame()
@@ -40,65 +81,63 @@ void Renderer::Setup3DRendering()
 {
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  modelmatrix = g_cam.GetMatrix();
-  modelmatrix *= quake2ogl;
-  g_frustum.extract_planes(modelmatrix, projectionmatrix);
+  modelmatrix_ = GetCameraMatrixFromEntity(*world.player_);
+  modelmatrix_ *= quake2ogl;
+  //g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
   // Graphical commands go here
   glEnable(GL_CULL_FACE);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE);
-  map->render(g_cam.position_, ((float)ticks)/1000.0f);
+  glBlendFunc(GL_ONE, GL_ZERO); // WAS ONE before
+  //map->render(g_cam.position_, ((float)ticks)/1000.0f);
 }
 
 void Renderer::Setup2DRendering()
 {
     glDisable(GL_CULL_FACE);
-
-
-
 }
 
-void Renderer::RenderFrame(const glm::vec4& camera_position, float time)
+void Renderer::RenderFrame(float time)
 {
   SetupFrame();
   
   // draw scene
   Setup3DRendering();
-  // this in world.update()
-  get_visible_faces(camera_position);
-  std::sort(m_opaque_faces.begin(), m_opaque_faces.end(), faceSort);
 
-  glBindBuffer(GL_ARRAY_BUFFER, vboId);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
+  glBindBuffer(GL_ARRAY_BUFFER, bsp_->vboId);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bsp_->iboId);
   glEnableVertexAttribArray(2);
 
-  for (int i = 0; i < m_opaque_faces.size(); ++i) 
+  for (unsigned int i = 0; i < renderables_.size(); ++i) 
   {
-    RenderFace(m_opaque_faces[i]);
+    RenderFace(renderables_[i]);
   }
 
-  m_time = time;
+  time_ = time;
 
   // draw gui and overlays
   Setup2DRendering();
 
-  font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
+  //font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
 
-    if (delta == 0) delta = 1;	
-    
-      std::stringstream fps;
-      fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
-      font.PrintString(fps.str(), glm::vec2(10.0f, (float)HEIGHT-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
+  //  if (delta == 0) delta = 1;	
+  //  
+  //    std::stringstream fps;
+  //    fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
+  //    font.PrintString(fps.str(), glm::vec2(10.0f, (float)screen_height_-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
 
   // finish frame
   SDL_GL_SwapBuffers();
 }
 
-
-void Renderer::FinishShader(const Q3Shader& shader)
+void Renderer::Blend(bool enable)
 {
-  glDisable(GL_BLEND);
+  if (blend_enabled_ != enable)
+  {
+    blend_enabled_ = enable;
+    if (enable) glEnable(GL_BLEND);
+    else glDisable(GL_BLEND);
+  }
 }
 
 void Renderer::TexEnvMode(unsigned int texture_unit, unsigned int new_mode) 
@@ -115,6 +154,7 @@ void Renderer::BindTexture(unsigned int texture_unit, unsigned int new_texture)
   if (texture_[texture_unit] != new_texture)
   {
     texture_[texture_unit] = new_texture;
+    ActiveTexture(GL_TEXTURE0+texture_unit);
     glBindTexture(GL_TEXTURE_2D, new_texture);
   }
 }
@@ -147,62 +187,54 @@ void Renderer::ActiveTexture(unsigned int new_active_texture)
   } 
 }
 
-void Renderer::SetupShader(Q3Shader& shader, int offset, int lm_index)
-{ 
-  const bsp_vertex& vertex = m_vertexes[offset];
+void Renderer::FinishShader()
+{
+  //Blend(false);
+}
 
+void Renderer::SetupShader(Shader& shader, int lm_index)
+{ 
   // the light map could change even though we have the same shaders
   // check and set new lightmap, leave everthing else the same
-  if (&shader == current_shader)
+  if (&shader == current_shader_)
   {
-    if (lm_index == current_lm) return;
+    if (lm_index == current_lightmap_) return;
 
-    current_lm = lm_index;
+    current_lightmap_ = lm_index;
+    BindTexture(shader.lightmap_stage_, textureLoader::GetLightmap(lm_index));
 
-    for (int i = 0; i < shader.stages.size(); ++i)
-    {
-      const q3_shader_stage& stage = *(shader.stages[i]);
-
-      if (stage.map.compare("$lightmap") == 0)
-      {
-        ActiveTexture(GL_TEXTURE0+i);
-        BindTexture(i, lightmaps_[lm_index]);
-        break;
-      }
-    }
-    ++m_num_skipped_shaders;
+    ++num_skipped_shaders_;
     return;
   } 
 
-  if (current_shader != 0)
-  {
-    FinishShader(*current_shader);
-  }
+  // THIS ONLY DISABLES BLENDING BUT WE WANT TO ALWAYS BLEND.. maybe
+  //if (current_shader_ != 0)
+  //{
+  //  FinishShader(*current_shader_);
+  //}
 
-  current_shader = &shader;
+  current_shader_ = &shader;
 
-  for (int i = 0; i < shader.stages.size(); ++i)
-  {
-    const q3_shader_stage& stage = *(shader.stages[i]);
-
-    // only enable blending in stage 0 to blend with background
+      // JUST ENABLE BLENDING ALL THE TIME AND BLEND NON TRANSLUCENT TEXTURES WITH ONE ZERO
+    // only enable blending if stage 0 wants to blend with background
     // shaders can only blend with textures
-    if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
-    {
-      glEnable(GL_BLEND);
-      BlendFunc(stage.blendfunc[0], stage.blendfunc[1]);
-    }
+    //if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
+    //{
+      Blend(true);
+      BlendFunc(shader.q3_shader_.stages_[0].blendfunc[0], shader.q3_shader_.stages_[0].blendfunc[1]);
+    //}
 
-    ActiveTexture(GL_TEXTURE0+i);
-
+  for (int i = 0; i < 8; ++i)
+  {
     // maybe put lightmap directly into stage so we dont need this if
-    if (stage.map.compare("$lightmap") == 0)
+    if (i == shader.lightmap_stage_)
     {
-      BindTexture(i, lightmaps_[lm_index]);
+      BindTexture(i, textureLoader::GetLightmap(lm_index));
+      --i;
     }
     else
     {
-      BindTexture(i, stage.texture);
+      BindTexture(i, shader.texture_id_[i]);
     } 
   } 
 }
@@ -210,37 +242,27 @@ void Renderer::SetupShader(Q3Shader& shader, int offset, int lm_index)
 void Renderer::RenderFace(bsp_face* face)
 {
   const bsp_face &current_face = *face;
-  static const int stride = sizeof(bsp_vertex); 
-  const int offset = current_face.vertex;
 
-  std::map<std::string, q3_shader*>::iterator it;
-  it = m_shaders.find(m_textures[current_face.texture].name);
-  q3_shader& shader = *(it->second);
+  Shader& shader = shaderLoader::GetShader(current_face.texture);
 
   // does everything in here need to be done every time? move into the conditional below?
-  SetupShader(shader, offset, current_face.lm_index);
+  SetupShader(shader, current_face.lm_index);
 
-  if (shader_ != shader.shader)
+  if (shader.time_idx_ != -1)
   {
-    glUseProgram(shader.shader);
-    shader_ = shader.shader;
-  }  
-
-  if (shader.time_idx != -1)
-  {
-    glUniform1f(shader.time_idx, m_time);   
+    glUniform1f(shader.time_idx_, time_);   
   } 
 
-  glUniformMatrix4fv(shader.projection_idx, 1, false, glm::value_ptr(projectionmatrix));
-  glUniformMatrix4fv(shader.model_idx, 1, false, glm::value_ptr(modelmatrix));
+  glUniformMatrix4fv(shader.projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader.model_idx_, 1, false, glm::value_ptr(modelmatrix_));
 
   if (current_face.type == POLYGON || current_face.type == MESH)
   {
-    RenderPolygon();
+    RenderPolygon(face);
   }
   else if (current_face.type == PATCH)
   {
-    RenderPatch();
+    RenderPatch(face);
   }
   else if (current_face.type == BILLBOARD)
   {
@@ -248,20 +270,25 @@ void Renderer::RenderFace(bsp_face* face)
   }
 }
 
-void Renderer::RenderPolygon()
+void Renderer::RenderPolygon(bsp_face* face)
 {
-  if (offset >= m_num_vertexes) return;
+  const bsp_face &current_face = *face;
+  const int offset = current_face.vertex;
 
-  glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
+  if (offset >= bsp_->num_vertexes_) return;
+
+  Shader& shader = *current_shader_;
+
+  glVertexAttribPointer(shader.position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
     BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
 
-  glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
+  glVertexAttribPointer(shader.tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
     BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)));
 
-  glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
+  glVertexAttribPointer(shader.lm_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
     BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
-  glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
+  glVertexAttribPointer(shader.color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
     BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));    
 
   glDrawElements(GL_TRIANGLES, 
@@ -271,7 +298,7 @@ void Renderer::RenderPolygon()
 
 }
 
-void Renderer::RenderPatch()
+void Renderer::RenderPatch(bsp_face* face)
 {
   /*
   glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
@@ -289,36 +316,36 @@ void Renderer::RenderPatch()
   glPatchParameteri(GL_PATCH_VERTICES, current_face.num_vertices);
   glDrawArrays(GL_PATCHES, 0, current_face.num_vertices);
   */
-  std::vector<bezier*> patches = m_patches[face];
+  //std::vector<bezier*> patches = m_patches[face];
 
-  for (int i = 0; i < patches.size(); ++i) 
-  {
-    const bezier* b = patches[i];
+  //for (int i = 0; i < patches.size(); ++i) 
+  //{
+  //  const bezier* b = patches[i];
 
-    glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
-      BUFFER_OFFSET(b->m_vertex_offset));
+  //  glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
+  //    BUFFER_OFFSET(b->m_vertex_offset));
 
-    glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
+  //  glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
+  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
 
-    glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
+  //  glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
+  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
-    glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
+  //  glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
+  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
 
-    // double work for each bezier, doesnt seem to be needed.. or maybe it does because of vertex colors! then 0 shouldnt be there
-    //prepare_shader(shader, 0, current_face.lm_index);
+  //  // double work for each bezier, doesnt seem to be needed.. or maybe it does because of vertex colors! then 0 shouldnt be there
+  //  //prepare_shader(shader, 0, current_face.lm_index);
 
-    unsigned int count[10] = {22,22,22,22,22,22,22,22,22,22};
-    GLvoid* indices[10];
-    for (int k = 0; k < 10; k++)
-    {
-      indices[k] = (GLvoid*)(b->m_index_offset+sizeof(unsigned int)*k*11*2);
-    }
+  //  unsigned int count[10] = {22,22,22,22,22,22,22,22,22,22};
+  //  GLvoid* indices[10];
+  //  for (int k = 0; k < 10; k++)
+  //  {
+  //    indices[k] = (GLvoid*)(b->m_index_offset+sizeof(unsigned int)*k*11*2);
+  //  }
 
-    glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)count, GL_UNSIGNED_INT, (const GLvoid**)indices, 10);
-  }  
+  //  glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)count, GL_UNSIGNED_INT, (const GLvoid**)indices, 10);
+  //}  
 }
 
 void Renderer::RenderBillboard()

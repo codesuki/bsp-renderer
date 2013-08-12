@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "util.h"
+
 #define strcasecmp _stricmp
 
 #define MAX_TEXMODS 4
@@ -75,7 +77,7 @@ struct TexMod
 
 struct Q3ShaderStage {
   unsigned int texture;
-  bool translucent;
+  bool isLightmap;
   std::string map;
   int blendfunc[2];
   int alphafunc;
@@ -91,9 +93,8 @@ struct Q3ShaderStage {
   Q3ShaderStage() 
   {
     texture = 0;
-    translucent = false;
-    blendfunc[0] = -1;
-    blendfunc[1] = -1;
+    blendfunc[0] = GL_ONE;
+    blendfunc[1] = GL_ZERO;
     alphafunc = 0;
     depthwrite = false;
     rgbgen = RGBGEN::IDENTITY;
@@ -109,7 +110,7 @@ public:
   ~Q3Shader(void);
 
   void ParseShader();
-  int ParseShaderStage(const std::string* shaders, int offset, Q3ShaderStage* stage);
+  int ParseShaderStage(const std::string* shaders, int offset);
 
   int GetAlphaFunc(std::string name);
   int GetBlendFunc(std::string name);
@@ -122,10 +123,11 @@ public:
   static int GetNewLinePosition(const std::string* buffer, int offset);
   int GetTokenEndPosition(const std::string* buffer, int offset);
 
-  std::vector<Q3ShaderStage*> stages_;
+  // making this objects instead of pointers we have some additional copying during load time 
+  // but don't need to worry about freeing the memory
+  std::vector<Q3ShaderStage> stages_;
 
   bool translucent_;
-  unsigned int shader_;
 
   std::string name_;
 };
