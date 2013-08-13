@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "SDL.h"
+#include "util.h"
 
 #include "messenger.h"
 #include "Message.h"
@@ -26,7 +26,7 @@ namespace input {
     SDL_ShowCursor(SDL_DISABLE);
   }
 
-  void Update() 
+  cmd_t Update() 
   {
     SDL_PumpEvents();
     Uint8 *keystate = SDL_GetKeyState(NULL);
@@ -45,6 +45,16 @@ namespace input {
     float rx = ((((float)x)-400.f)/100.f);
     float ry = ((((float)y)-300.f)/100.f);
 
-    messenger::BroadcastMessage(MESSAGE::CMD_MOUSELOOK, &MouseMoveMessage(rx, ry));
+    //messenger::BroadcastMessage(MESSAGE::CMD_MOUSELOOK, &MouseMoveMessage(rx, ry));
+    cmd_t cmds;
+    memset(&cmds, 0, sizeof(cmds));
+    if (keystate[SDLK_w]) cmds.forward_move += 125;
+    if (keystate[SDLK_s]) cmds.forward_move -= 125;
+    if (keystate[SDLK_d]) cmds.right_move += 125;
+    if (keystate[SDLK_a]) cmds.right_move -= 125;
+    cmds.mouse_dx = rx;
+    cmds.mouse_dy = ry;
+
+    return cmds;
   }
 }

@@ -108,11 +108,12 @@ namespace shaderLoader
       stage.map = name;
       q3_shader->stages_.push_back(stage);
 
-      //stage = Q3ShaderStage();
-      //stage.map = "$lightmap";
-      //stage.blendfunc[0] = GL_DST_COLOR;
-      //stage.blendfunc[1] = GL_ZERO;
-      //q3_shader.stages_.push_back(stage);	
+      stage = Q3ShaderStage();
+      stage.map = "$lightmap";
+      stage.isLightmap = true;
+      stage.blendfunc[0] = GL_DST_COLOR;
+      stage.blendfunc[1] = GL_ZERO;
+      q3_shader->stages_.push_back(stage);	
 
       Shader* shader = new Shader(*q3_shader);
 
@@ -141,9 +142,17 @@ namespace shaderLoader
     return 0;
   }
 
-  Shader& GetShader(unsigned int id)
+  Shader* GetShader(unsigned int id)
   {
-    return *shaders_[id];
+    return shaders_[id];
+  }
+
+  void CompileAllShaders()
+  {
+    for (Shader* shader : shaders_)
+    {
+      shader->CompileShader();
+    }
   }
 
   int LoadAllShaders()

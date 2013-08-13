@@ -4,14 +4,14 @@
 #include "World.h"
 
 extern World world;
+extern cmd_t g_cmds;
 
 PlayerPhysicsComponent::PlayerPhysicsComponent(Entity& entity) : 
   entity_(entity), position_(entity.position_), 
   orientation_(entity.orientation_), cmds_(entity.cmds_), 
-  up_(entity.up_), right_(entity.right_), look_(entity.look_)
+  up_(entity.up_), right_(entity.right_), look_(entity.look_), pitch_(entity.pitch_), yaw_(entity.yaw_)
 {
 }
-
 
 PlayerPhysicsComponent::~PlayerPhysicsComponent(void)
 {
@@ -19,15 +19,28 @@ PlayerPhysicsComponent::~PlayerPhysicsComponent(void)
 
 void PlayerPhysicsComponent::Update(void)
 {
-  float speed = .001f * 10;//difference_;
+  pitch_ += g_cmds.mouse_dy;
+  if (pitch_ > 1.5707f) 
+      pitch_ = 1.5707f;
+
+  if (pitch_ < -1.5707f)
+      pitch_ = -1.5707f;
+
+  yaw_ += g_cmds.mouse_dx;
+  if (yaw_ > 2*3.1415f)
+      yaw_ = 0.0f;
+  if (yaw_ < 2*-3.1415f)
+      yaw_ = 0.0f;
+
+  float speed = .001f * 70;//difference_;
 
   glm::vec4 accel; // add gravity + friction + air_friction
 
-  accel += right_ * speed * cmds_.right_move;
-  accel += look_ * speed * cmds_.forward_move;
+  accel += right_ * speed * g_cmds.right_move;
+  accel += look_ * speed * g_cmds.forward_move;
 
   // can fly..? lol
-  if (cmds_.up_move > 0) accel.z = 260;
+  if (g_cmds.up_move > 0) accel.z = 260;
 
   // trace to ground and get plane
   glm::vec4 wish_position = position_ + accel;
@@ -47,23 +60,25 @@ void PlayerPhysicsComponent::Update(void)
   bool on_ground = false;
 
   // we hit ground
-  if (ground_fraction < 1.0f && accel.y > 0.0f)
-  {
-    on_ground = true;
-    float distance = glm::dot(plane, accel);
-    accel = accel - plane * distance;
-    wish_position = position_ + accel;
-    end = wish_position;
-  }
+  //if (ground_fraction < 1.0f && accel.y > 0.0f)
+  //{
+  //  on_ground = true;
+  //  float distance = glm::dot(plane, accel);
+  //  accel = accel - plane * distance;
+  //  wish_position = position_ + accel;
+  //  end = wish_position;
+  //}
 
   float fraction = 1.0f;
   
   //if (!g_noclip) 
-  {
-    accel.z += -9.8f;
-    fraction = world.map_->trace(start, end, &plane);
-  }
+  //{
+  //  accel.z += -9.8f;
+  //  fraction = world.map_->trace(start, end, &plane);
+  //}
 
   // + velocity... velocity += accel
   position_ += accel * fraction;
+
+  memset(&cmds_, 0, sizeof(cmd_t));
 }

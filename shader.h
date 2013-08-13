@@ -7,7 +7,7 @@
 class Shader
 {
 public:
-  Shader(const Q3Shader& q3_shader) : q3_shader_(q3_shader), lightmap_stage_(-1) { CompileShader(); };
+  Shader(Q3Shader& q3_shader) : shader_(0), q3_shader_(q3_shader), lightmap_stage_(-1), compiled_(false) {  };
   ~Shader(void);
 
   void CompileShader();
@@ -16,12 +16,12 @@ public:
   void CompileFragmentShader();
   void CompileFontShader();
 
-  void SetupTextures();
+  int SetupTextures();
 
   GLuint CreateShader(GLenum shader_type, const std::string& shader_file);
   GLuint CreateProgram(const std::vector<GLuint>& shader_list);
 
-  const Q3Shader& q3_shader_;
+  Q3Shader& q3_shader_;
 
   std::stringstream vertex_shader_;
   std::stringstream tesselation_shader_;
@@ -38,8 +38,10 @@ public:
   unsigned int lm_coord_idx_;
   unsigned int color_idx_;
 
-  unsigned int lightmap_stage_;
+  int lightmap_stage_;
   unsigned int texture_id_[8];
+
+  bool compiled_;
 };
 
 #endif

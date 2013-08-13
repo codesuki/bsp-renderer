@@ -8,7 +8,7 @@ Shader::~Shader(void)
 {
 }
 
-void Shader::SetupTextures()
+int Shader::SetupTextures()
 {
   logger::Log(logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", 0);
 
@@ -25,7 +25,15 @@ void Shader::SetupTextures()
       {
         continue;
       } 
-      texture_id_[i] = textureLoader::GetTexture(stage.map, stage.clamp);
+      int ret = textureLoader::GetTexture(stage.map, stage.clamp);
+      if (ret == -1)
+      {
+        return -1;
+      }
+      else
+      {
+        texture_id_[i] = ret;
+      }
     }
   }
 }
@@ -35,7 +43,12 @@ void Shader::CompileShader()
   if (q3_shader_.stages_.size() == 0)
     return;
 
-  SetupTextures();
+  if (SetupTextures() == -1)
+  {
+    logger::Log(logger::ERROR, "Could not load all textures for shader (%s)", q3_shader_.name_.c_str());
+    return;
+  }
+
   CompileVertexShader();
   CompileFragmentShader();
 
@@ -99,6 +112,8 @@ void Shader::CompileShader()
     glUniform1i(texture_idx_[i], i);
   }  
   glUseProgram(0);
+
+  compiled_ = true;
 }
 
 void Shader::CompileVertexShader()

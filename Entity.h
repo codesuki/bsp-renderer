@@ -6,15 +6,6 @@
 #include "Component.h"
 #include "Message.h"
 
-struct cmd_t 
-{
-  char forward_move;
-  char right_move;
-  char up_move;
-  float mouse_dx;
-  float mouse_dy;
-};
-
 class Entity
 {
 public:

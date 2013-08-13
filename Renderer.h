@@ -6,6 +6,9 @@
 #include "bsp.h"
 #include "Entity.h"
 
+#define WIDTH 1280
+#define HEIGHT 720
+
 static const glm::mat4 quake2ogl(0.0f, 0.0f, -1.0f, 0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
 class Renderer
@@ -32,7 +35,7 @@ public:
   //void AddRenderable(/* type */);
   void AddRenderables(std::vector<bsp_face*> renderables);
 
-  void SetupShader(Shader& shader, int lm_index);
+  void SetupShader(Shader* shader, int lm_index);
   void FinishShader();
 
   // utilities to reduce state changes

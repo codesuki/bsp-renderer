@@ -204,25 +204,27 @@ Bsp::Bsp(std::string filename)
 
   logger::Log(logger::DEBUG, "Finished loading all needed textures");    
 
-  //// remove lightmap stage for faces without lightmap.
-  //for (int i = 0; i < num_faces_; ++i)
-  //{
-  //  if (faces_[i].lm_index >= 0)
-  //  {
-  //    continue;
-  //  }
-  //  std::map<std::string, Q3Shader*>::iterator it;
-  //  it = shaders_.find(textures_[faces_[i].texture].name);
-  //  Q3Shader& shader = *(it->second);
-  //  for (int j = 0; j < shader.stages_.size(); ++j)
-  //  {
-  //    if (shader.stages_[j]->map.compare("$lightmap") == 0)
-  //    {
-  //      shader.stages_.pop_back();
-  //      logger::Log(logger::DEBUG, "Removed lightmap from shader %s", textures_[faces_[i].texture].name);
-  //    }
-  //  }
-  //} 
+  // remove lightmap stage for faces without lightmap.
+  for (int i = 0; i < num_faces_; ++i)
+  {
+    if (faces_[i].lm_index >= 0)
+    {
+      continue;
+    }
+
+    Shader* shader = shaderLoader::GetShader(faces_[i].texture);
+    
+    for (int j = 0; j < shader->q3_shader_.stages_.size(); ++j)
+    {
+      if (shader->q3_shader_.stages_[j].map == "$lightmap")
+      {
+        shader->q3_shader_.stages_.pop_back();
+        logger::Log(logger::ERROR, "Removed lightmap from shader %s", textures_[faces_[i].texture].name);
+      }
+    }
+  } 
+
+  shaderLoader::CompileAllShaders();
 
   logger::Log(logger::DEBUG, "Loading lightmaps...");
   load_lightmaps();
@@ -368,11 +370,11 @@ std::vector<bsp_face*> Bsp::ComputeVisibleFaces(const glm::vec4& camera_position
 
   for (int i = num_leafs_-1; i >= 0; --i)
   {
-    //if (!IsClusterVisible(cluster, leafs_[i].cluster)) 
-    //{
-    //  ++num_cluster_not_visible_;
-    //  continue;
-    //}
+    if (!IsClusterVisible(cluster, leafs_[i].cluster)) 
+    {
+      ++num_cluster_not_visible_;
+      continue;
+    }
 
     //glm::vec3 min((float)leafs_[i].mins[0], (float)leafs_[i].mins[1], (float)leafs_[i].mins[2]);
     //glm::vec3 max((float)leafs_[i].maxs[0], (float)leafs_[i].maxs[1], (float)leafs_[i].maxs[2]);

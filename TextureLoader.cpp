@@ -1,5 +1,7 @@
 #include "TextureLoader.h"
 
+#include "logger.h"
+
 namespace textureLoader
 {
   namespace 
@@ -15,6 +17,8 @@ namespace textureLoader
       return -1;
     }
 
+    std::string oldname=name;
+
     if (name.find('.') != std::string::npos)
     {
       name.erase(name.end()-4, name.end());
@@ -29,16 +33,16 @@ namespace textureLoader
     SDL_Surface *image;
     image = IMG_Load(filename_jpg.c_str());
 
-    printf("loading texture: %s\n", filename_jpg.c_str());
+    logger::Log(logger::DEBUG, "loading texture: %s\n", filename_jpg.c_str());
 
     if (!image) 
     {
-      printf("%s\n", IMG_GetError());
+      logger::Log(logger::DEBUG, "%s", IMG_GetError());
 
       image = IMG_Load(filename_tga.c_str());
       if (!image) 
       {
-        printf("%s\n", IMG_GetError());
+        logger::Log(logger::ERROR, "%s", IMG_GetError());
         return -1;
       }
     }
@@ -89,7 +93,7 @@ namespace textureLoader
 
     SDL_FreeSurface(image);
 
-    textures_[name] = texture;
+    textures_[oldname] = texture;
 
     return 0;
   }
@@ -119,17 +123,30 @@ namespace textureLoader
 
     return 0;
   }
+    unsigned int skipped_textures_ = 0;
+
+    unsigned int skipped_textures()
+    {
+      return skipped_textures_;
+    }
 
   int GetTexture(std::string texture, bool clamp)
   {
-    int texture_id = textures_[texture];
-
-    if (texture_id == 0)
+    auto it = textures_.find(texture);
+    if (it == textures_.end())
     {
-      LoadTexture(texture, clamp);
+      int ret = LoadTexture(texture, clamp);
+      if (ret == -1)
+      {
+        return -1;
+      }
     }
-
-    texture_id = textures_[texture];
+    else
+    {
+      ++skipped_textures_;
+    }
+        
+    int texture_id = textures_[texture];
 
     return texture_id;
   }
