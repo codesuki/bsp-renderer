@@ -4,10 +4,11 @@
 #include "TextureLoader.h"
 #include "ShaderLoader.h"
 #include "World.h"
+#include "bezier.h"
 
 extern World world;
 
-Renderer::Renderer(void)
+Renderer::Renderer(void) : screen_width_(WIDTH), screen_height_(HEIGHT), current_shader_(nullptr)
 {
 }
 
@@ -83,7 +84,7 @@ void Renderer::Setup3DRendering()
 
   modelmatrix_ = GetCameraMatrixFromEntity(*world.player_);
 
-  modelmatrix_ = glm::lookAt(glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
+  //modelmatrix_ = glm::lookAt(glm::vec3( 50.0f, 50.0f, 50.0f ), glm::vec3(-15.0, -15.0, -15.0), glm::vec3(0.0, 1.0, 0.0));
 
   modelmatrix_ *= quake2ogl;
   //g_frustum.extract_planes(modelmatrix, projectionmatrix);
@@ -91,8 +92,7 @@ void Renderer::Setup3DRendering()
   // Graphical commands go here
   glEnable(GL_CULL_FACE);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ZERO); // WAS ONE before
-  //map->render(g_cam.position_, ((float)ticks)/1000.0f);
+  glBlendFunc(GL_ONE, GL_ONE); // WAS ONE before
 }
 
 void Renderer::Setup2DRendering()
@@ -102,6 +102,8 @@ void Renderer::Setup2DRendering()
 
 void Renderer::RenderFrame(float time)
 {
+  time_ = time;
+
   SetupFrame();
   
   // draw scene
@@ -110,16 +112,15 @@ void Renderer::RenderFrame(float time)
   glBindBuffer(GL_ARRAY_BUFFER, world.map_->vboId);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, world.map_->iboId);
   glEnableVertexAttribArray(2);
-
   for (unsigned int i = 0; i < renderables_.size(); ++i) 
   {
     RenderFace(renderables_[i]);
   }
+  glError();
 
-  time_ = time;
 
   // draw gui and overlays
-  Setup2DRendering();
+  //Setup2DRendering();
 
   //font.PrintString("<Q3 BSP RENDERER>", glm::vec2(10.0f, 10.0f), glm::vec4(1.0, 0.0, 0.0, 1.0));
 
@@ -195,23 +196,22 @@ void Renderer::FinishShader()
   //Blend(false);
 }
 
-void Renderer::SetupShader(Shader& shader, int lm_index)
+void Renderer::SetupShader(Shader* shader, int lm_index)
 { 
-  if (current_shader_ != &shader)
-  {
-    glUseProgram(shader.shader_);
-    current_shader_ = &shader;
-  }  
-
   // the light map could change even though we have the same shaders
   // check and set new lightmap, leave everthing else the same
-  if (&shader == current_shader_ && lm_index != -1)
+  if (shader == current_shader_ && lm_index != -1)
   {
     if (lm_index == current_lightmap_) return;
 
-    current_lightmap_ = lm_index;
-    BindTexture(shader.lightmap_stage_, textureLoader::GetLightmap(lm_index));
+    if (shader->lightmap_stage_ == -1)
+    {
+      return;
+    }
 
+    current_lightmap_ = lm_index;
+
+    BindTexture(shader->lightmap_stage_, textureLoader::GetLightmap(lm_index));
     ++num_skipped_shaders_;
     return;
   } 
@@ -222,7 +222,7 @@ void Renderer::SetupShader(Shader& shader, int lm_index)
   //  FinishShader(*current_shader_);
   //}
 
-  current_shader_ = &shader;
+  //current_shader_ = shader;
 
       // JUST ENABLE BLENDING ALL THE TIME AND BLEND NON TRANSLUCENT TEXTURES WITH ONE ZERO
     // only enable blending if stage 0 wants to blend with background
@@ -230,28 +230,30 @@ void Renderer::SetupShader(Shader& shader, int lm_index)
     //if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
     //{
       
-      if (shader.q3_shader_.stages_.size() > 0) 
+      if (shader->q3_shader_.stages_.size() > 0) 
       {
         Blend(true);
-        BlendFunc(shader.q3_shader_.stages_[0].blendfunc[0], shader.q3_shader_.stages_[0].blendfunc[1]);
+        BlendFunc(shader->q3_shader_.stages_[0].blendfunc[0], shader->q3_shader_.stages_[0].blendfunc[1]);
       }
       else
+      {
         Blend(false);
+      }
 
         //BlendFunc(GL_ONE, GL_ZERO);
     //}
 
-  for (int i = 0; i < 8; ++i)
+      for (unsigned int i = 0; i < shader->q3_shader_.stages_.size(); ++i)
   {
     // maybe put lightmap directly into stage so we dont need this if
-    if (i == shader.lightmap_stage_)
+    if (i == shader->lightmap_stage_ && lm_index != -1)
     {
       BindTexture(i, textureLoader::GetLightmap(lm_index));
-      --i;
+      current_lightmap_ = lm_index;
     }
     else
     {
-      BindTexture(i, shader.texture_id_[i]);
+      BindTexture(i, shader->texture_id_[i]);
     } 
   } 
 }
@@ -260,18 +262,29 @@ void Renderer::RenderFace(bsp_face* face)
 {
   const bsp_face &current_face = *face;
 
-  Shader& shader = shaderLoader::GetShader(current_face.texture);
+  Shader* shader = shaderLoader::GetShader(current_face.texture);
+
+  if (shader->q3_shader_.stages_.size() == 0) // skip no shader / no draw. should be sorted out before.
+  {
+    return;
+  }
 
   // does everything in here need to be done every time? move into the conditional below?
   SetupShader(shader, current_face.lm_index);
 
-  if (shader.time_idx_ != -1)
+  if (current_shader_ != shader)
   {
-    glUniform1f(shader.time_idx_, time_);   
+    glUseProgram(shader->shader_);
+    current_shader_ = shader;
+  }  
+
+  if (shader->time_idx_ != -1)
+  {
+    glUniform1f(shader->time_idx_, time_);   
   } 
 
-  glUniformMatrix4fv(shader.projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
-  glUniformMatrix4fv(shader.model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+  glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
 
   if (current_face.type == POLYGON || current_face.type == MESH)
   {
@@ -333,36 +346,36 @@ void Renderer::RenderPatch(bsp_face* face)
   glPatchParameteri(GL_PATCH_VERTICES, current_face.num_vertices);
   glDrawArrays(GL_PATCHES, 0, current_face.num_vertices);
   */
-  //std::vector<bezier*> patches = m_patches[face];
+  std::vector<bezier*> patches = world.map_->patches_[face];
 
-  //for (int i = 0; i < patches.size(); ++i) 
-  //{
-  //  const bezier* b = patches[i];
+  for (int i = 0; i < patches.size(); ++i) 
+  {
+    const bezier* b = patches[i];
 
-  //  glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride, 
-  //    BUFFER_OFFSET(b->m_vertex_offset));
+    glVertexAttribPointer(current_shader_->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
+      BUFFER_OFFSET(b->m_vertex_offset));
 
-  //  glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
+    glVertexAttribPointer(current_shader_->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
+      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
 
-  //  glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride, 
-  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
+    glVertexAttribPointer(current_shader_->lm_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
+      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
-  //  glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride, 
-  //    BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
+    glVertexAttribPointer(current_shader_->color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
+      BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
 
-  //  // double work for each bezier, doesnt seem to be needed.. or maybe it does because of vertex colors! then 0 shouldnt be there
-  //  //prepare_shader(shader, 0, current_face.lm_index);
+    // double work for each bezier, doesnt seem to be needed.. or maybe it does because of vertex colors! then 0 shouldnt be there
+    //prepare_shader(shader, 0, current_face.lm_index);
 
-  //  unsigned int count[10] = {22,22,22,22,22,22,22,22,22,22};
-  //  GLvoid* indices[10];
-  //  for (int k = 0; k < 10; k++)
-  //  {
-  //    indices[k] = (GLvoid*)(b->m_index_offset+sizeof(unsigned int)*k*11*2);
-  //  }
+    unsigned int count[10] = {22,22,22,22,22,22,22,22,22,22};
+    GLvoid* indices[10];
+    for (int k = 0; k < 10; k++)
+    {
+      indices[k] = (GLvoid*)(b->m_index_offset+sizeof(unsigned int)*k*11*2);
+    }
 
-  //  glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)count, GL_UNSIGNED_INT, (const GLvoid**)indices, 10);
-  //}  
+    glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)count, GL_UNSIGNED_INT, (const GLvoid**)indices, 10);
+  }  
 }
 
 void Renderer::RenderBillboard()

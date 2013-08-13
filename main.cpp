@@ -6,12 +6,13 @@
 #include "World.h"
 #include "TextureLoader.h"
 #include "ShaderLoader.h"
-
-#define WIDTH 1280
-#define HEIGHT 720
+#include "PlayerInputComponent.h"
+#include "PlayerPhysicsComponent.h"
 
 Renderer renderer;
 World world;
+
+cmd_t g_cmds;
 
 bool g_running = true;
 
@@ -48,6 +49,8 @@ int main(int argc, char **argv)
 
   input::Initialize();
 
+  renderer.Initialize();
+
   logger::Log(logger::DEBUG, "Loading shader files");
   shaderLoader::LoadAllShaders();
 
@@ -61,21 +64,29 @@ int main(int argc, char **argv)
   unsigned int ticks = 0;   
   unsigned int delta = 0;
 
+
   Entity player;
+  PlayerInputComponent pic(player);
+  PlayerPhysicsComponent ppc(player);
+
+  player.AddComponent(&pic);
+  player.AddComponent(&ppc);
+
   world.player_ = &player;
   world.players_.push_back(&player);
 
-  glm::vec4 position( -15.0f, 15.0f, 15.0f, 1.0f );
-  renderer.AddRenderables(world.map_->ComputeVisibleFaces(position));
+  player.position_ = glm::vec4( -15.0f, 15.0f, 15.0f, 1.0f );
+  renderer.AddRenderables(world.map_->ComputeVisibleFaces(player.position_));
 
   while (g_running)
   {
     delta = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks(); 
 
-    input::Update();
+    g_cmds = input::Update();
     world.Update();
-    renderer.RenderFrame((float)delta/1000);
+
+    renderer.RenderFrame((float)ticks/1000);
   }
 
   shaderLoader::Deinitialize();

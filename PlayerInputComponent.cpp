@@ -1,9 +1,9 @@
 #include "PlayerInputComponent.h"
-
+#include "messenger.h"
 
 PlayerInputComponent::PlayerInputComponent(Entity& entity) : entity_(entity)
 {
-  // register for messages
+  //messenger::RegisterReceiver(MESSAGE::CMD_MOUSELOOK, &PlayerInputComponent::MouseMove);
 }
 
 

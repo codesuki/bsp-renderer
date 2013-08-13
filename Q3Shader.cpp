@@ -41,6 +41,11 @@ unsigned int Q3Shader::ParseShaderStage(const std::string* shaders, unsigned int
         // maybe trim another way, just skip all spaces until next letter after GetToken
         stage.map = token;
         stage.map.erase(0, stage.map.find_first_not_of(' '));
+
+        if (stage.map =="$lightmap")
+        {
+          stage.isLightmap = true;
+        }
       } 
       else if (strcasecmp("clampmap", token.c_str()) == 0)
       {
@@ -209,6 +214,9 @@ unsigned int Q3Shader::ParseShaderStage(const std::string* shaders, unsigned int
 // make the buffer and offset a class members
 std::string Q3Shader::GetToken(const std::string* buffer, unsigned int& offset)
 {
+  while ((*buffer)[offset] == ' ') ++offset; // skip spaces so that they wont be recognized as token end
+  // could call token until its not empty.
+
   int end_pos = GetTokenEndPosition(buffer, offset);
   std::string token = buffer->substr(offset, end_pos-offset);
   offset = ++end_pos;

@@ -22,5 +22,8 @@ private:
   glm::vec4& up_;
   glm::vec4& right_;
   glm::vec4& look_;
+
+  float& pitch_;
+  float& yaw_;
 };
 
