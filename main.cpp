@@ -27,6 +27,12 @@ void QuitCallback(Message* msg)
   g_running = false;
 }
 
+void NoclipCallback(Message* msg)
+{
+  logger::Log(logger::ERROR, "NOCLIP SWITCH");
+  world.player_->noclip_ = !world.player_->noclip_;
+}
+
 int main(int argc, char **argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -52,6 +58,7 @@ int main(int argc, char **argv)
 
   //font.LoadFont("gfx\\2d\\bigchars.tga");
   messenger::RegisterReceiver(MESSAGE::QUIT, QuitCallback);
+  messenger::RegisterReceiver(MESSAGE::NOCLIP, NoclipCallback);
 
   input::Initialize();
 
@@ -80,6 +87,7 @@ int main(int argc, char **argv)
   PlayerPhysicsComponent ppc1(player);
   player.AddComponent(&pic1);
   player.AddComponent(&ppc1);
+  player.noclip_ = true;
 
   world.player_ = &player;
   world.players_.push_back(&player);
@@ -88,17 +96,19 @@ int main(int argc, char **argv)
   enemy.lower = lower;
   enemy.upper = upper;
   enemy.head = head;
+  enemy.noclip_ = false;
 
   PlayerAnimationComponent pac2(enemy);
   PlayerPhysicsComponent ppc2(enemy);
-  player.AddComponent(&pac2);
-  player.AddComponent(&ppc2);
+  enemy.AddComponent(&pac2);
+  enemy.AddComponent(&ppc2);
+
 
   world.enemy_ = &enemy;
   world.players_.push_back(&enemy);
 
   player.position_ = glm::vec4( -589.0f, -275.0f, 128.0f, 1.0f );
- 
+  enemy.position_ = glm::vec4( -589.0f, -275.0f, 100.0f, 1.0f );
 
   while (g_running)
   {

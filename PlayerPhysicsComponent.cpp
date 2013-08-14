@@ -47,20 +47,20 @@ void PlayerPhysicsComponent::Update(unsigned int time)
   glm::vec4 end = wish_position;
   glm::vec4 start = position_;
 
-  glm::vec4 ground = start;
+  //glm::vec4 ground = start;
 
-  start.z += 0.5f;
-  ground.z -= 0.30f;
+  ////start.z += 1.5f;
+  //ground.z -= 21.0f;
 
   glm::vec4 plane;
 
-  float ground_fraction = world.map_->trace(start, ground, &plane);
-  start.z -= 0.5f;
+  //float ground_fraction = world.map_->trace(start, ground, &plane);
+  ////start.z -= 1.5f;
 
-  bool on_ground = false;
+  //bool on_ground = false;
 
-  // we hit ground
-  //if (ground_fraction < 1.0f && accel.y > 0.0f)
+  //// we hit ground
+  //if (ground_fraction < 1.0f && accel.z > 0.0f)
   //{
   //  on_ground = true;
   //  float distance = glm::dot(plane, accel);
@@ -71,11 +71,11 @@ void PlayerPhysicsComponent::Update(unsigned int time)
 
   float fraction = 1.0f;
   
-  //if (!g_noclip) 
-  //{
-  //  accel.z += -9.8f;
-  //  fraction = world.map_->trace(start, end, &plane);
-  //}
+  if (!entity_.noclip_) 
+  {
+    //accel.z += -9.8f;
+    fraction = world.map_->trace(start, end, &plane);
+  }
 
   // + velocity... velocity += accel
   position_ += accel * fraction;

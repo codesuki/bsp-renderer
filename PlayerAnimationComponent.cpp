@@ -19,6 +19,7 @@ PlayerAnimationComponent::~PlayerAnimationComponent(void)
 
 void PlayerAnimationComponent::Update(unsigned int time)
 {
+  time = time/60;
   int skip = 153 - 90;
   int g_lower_fps = 18;
   int g_lower_startFrame = 173 - skip;
