@@ -30,6 +30,7 @@ public:
 
   Model *upper, *lower, *head;
   unsigned int upper_frame, lower_frame;
+  bool noclip_;
 
 private:
   std::vector<Component*> components_;

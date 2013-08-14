@@ -12,7 +12,8 @@ enum class MESSAGE
   CMD_UP,
   CMD_DOWN,
   CMD_MOUSELOOK,
-  QUIT
+  QUIT,
+  NOCLIP
 };
 
 // eventually replace bool with message

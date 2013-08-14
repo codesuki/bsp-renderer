@@ -318,7 +318,7 @@ void Renderer::RenderModel()
   glUseProgram(shader->shader_);
   current_shader_ = shader;
 
-  modelmatrix_ = glm::translate(modelmatrix_, glm::vec3(-589.0f, -275.0f, 128.0f));
+  modelmatrix_ = glm::translate(modelmatrix_, glm::vec3(world.enemy_->position_));
 
 
 

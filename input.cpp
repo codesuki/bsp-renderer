@@ -21,6 +21,7 @@ namespace input {
     keymap_[SDLK_s] = MESSAGE::CMD_BACKWARD;
     keymap_[SDLK_a] = MESSAGE::CMD_LEFT;
     keymap_[SDLK_d] = MESSAGE::CMD_RIGHT;
+    keymap_[SDLK_n] = MESSAGE::NOCLIP;
 
     SDL_WarpMouse(400, 300);
     SDL_ShowCursor(SDL_DISABLE);
