@@ -8,9 +8,15 @@
 #include "ShaderLoader.h"
 #include "PlayerInputComponent.h"
 #include "PlayerPhysicsComponent.h"
+#include "PlayerAnimationComponent.h"
+#include "Model.h"
 
 Renderer renderer;
 World world;
+
+Model* head;
+Model* upper;
+Model* lower;
 
 cmd_t g_cmds;
 
@@ -57,26 +63,42 @@ int main(int argc, char **argv)
   world.LoadLevel("q3dm6");
 
   //Model model("tankjr");
-  //Model model("models\\players\\tankjr\\head.md3");
-  //Model model("models\\players\\tankjr\\upper.md3");
-  //Model model("models\\players\\tankjr\\lower.md3");
+  head = new Model("models/players/visor/head.md3");
+  head->shader_ = shaderLoader::CreateModelShader("models/players/visor/red.tga");
+  upper = new Model("models/players/visor/upper.md3");
+  upper->shader_ = shaderLoader::CreateModelShader("models/players/visor/red.tga");
+  lower = new Model("models/players/visor/lower.md3");
+  lower->shader_ = shaderLoader::CreateModelShader("models/players/visor/red.tga");
+  
 
   unsigned int ticks = 0;   
   unsigned int delta = 0;
 
 
   Entity player;
-  PlayerInputComponent pic(player);
-  PlayerPhysicsComponent ppc(player);
-
-  player.AddComponent(&pic);
-  player.AddComponent(&ppc);
+  PlayerInputComponent pic1(player);
+  PlayerPhysicsComponent ppc1(player);
+  player.AddComponent(&pic1);
+  player.AddComponent(&ppc1);
 
   world.player_ = &player;
   world.players_.push_back(&player);
 
-  player.position_ = glm::vec4( -15.0f, 15.0f, 15.0f, 1.0f );
-  renderer.AddRenderables(world.map_->ComputeVisibleFaces(player.position_));
+  Entity enemy;
+  enemy.lower = lower;
+  enemy.upper = upper;
+  enemy.head = head;
+
+  PlayerAnimationComponent pac2(enemy);
+  PlayerPhysicsComponent ppc2(enemy);
+  player.AddComponent(&pac2);
+  player.AddComponent(&ppc2);
+
+  world.enemy_ = &enemy;
+  world.players_.push_back(&enemy);
+
+  player.position_ = glm::vec4( -589.0f, -275.0f, 128.0f, 1.0f );
+ 
 
   while (g_running)
   {
@@ -84,7 +106,10 @@ int main(int argc, char **argv)
     ticks = SDL_GetTicks(); 
 
     g_cmds = input::Update();
-    world.Update();
+    world.Update(ticks);
+    renderer.AddRenderables(world.map_->ComputeVisibleFaces(player.position_));
+
+    //std::cout << "pos: " << player.position_[0] << " " << player.position_[1] << " " << player.position_[2] << std::endl;
 
     renderer.RenderFrame((float)ticks/1000);
   }

@@ -123,6 +123,30 @@ namespace shaderLoader
     }
   }
 
+  Shader* CreateModelShader(std::string name)
+  {
+    auto it = shaders_by_name_.find("name");
+
+    if (it == shaders_by_name_.end())
+    {
+      logger::Log(logger::DEBUG, "Creating model shader...");
+
+      Q3Shader* q3_shader = new Q3Shader(name);
+
+      Q3ShaderStage stage = Q3ShaderStage();
+      stage.map = name;
+      q3_shader->stages_.push_back(stage);
+
+      Shader* shader = new Shader(*q3_shader);
+      shader->CompileShader();
+
+      shaders_by_name_[name] = shader;
+    }
+
+    return shaders_by_name_[name];
+  }
+
+
   int GetShader(std::string name)
   {
     Shader* shader;

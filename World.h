@@ -13,10 +13,11 @@ public:
 
   void LoadLevel(std::string name);
 
-  void Update();
+  void Update(unsigned int time);
 
   Bsp* map_;
   Entity* player_;
+  Entity* enemy_;
 
 
   std::vector<Entity*> entities_;

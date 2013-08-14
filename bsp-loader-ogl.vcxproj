@@ -94,6 +94,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="messenger.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="PlayerAnimationComponent.cpp" />
     <ClCompile Include="PlayerInputComponent.cpp" />
     <ClCompile Include="PlayerPhysicsComponent.cpp" />
     <ClCompile Include="Q3Shader.cpp" />
@@ -116,6 +117,7 @@
     <ClInclude Include="Message.h" />
     <ClInclude Include="messenger.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="PlayerAnimationComponent.h" />
     <ClInclude Include="PlayerInputComponent.h" />
     <ClInclude Include="PlayerPhysicsComponent.h" />
     <ClInclude Include="Q3Shader.h" />

@@ -17,10 +17,10 @@ void World::LoadLevel(std::string name)
   map_ = new Bsp(path);
 }
 
-void World::Update()
+void World::Update(unsigned int time)
 {
   for (Entity* player : players_)
   {
-    player->Update();
+    player->Update(time);
   }
 }

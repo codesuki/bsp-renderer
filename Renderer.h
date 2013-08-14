@@ -14,6 +14,8 @@ static const glm::mat4 quake2ogl(0.0f, 0.0f, -1.0f, 0.0f, -1.0f,  0.0f, 0.0f, 0.
 class Renderer
 {
 public:
+  void RenderModel();
+
   Renderer(void);
   ~Renderer(void);
 

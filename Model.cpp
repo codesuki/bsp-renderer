@@ -95,6 +95,7 @@ Model::Model(std::string filename)
 		fin.seekg(header_.ofs_surfaces+surfaces_[i].ofs_shaders);
 		for(int j = 0; j < surfaces_[i].num_shaders; ++j) {
 			fin.read((char*)(&shaders_[i][j]), sizeof(md3_shader));
+      std::cout << shaders_[i][j].name << std::endl;
 		}
 
 		fin.seekg(header_.ofs_surfaces+surfaces_[i].ofs_triangles);
@@ -116,9 +117,12 @@ Model::Model(std::string filename)
 		fin.seekg(header_.ofs_surfaces+surfaces_[i].ofs_xyznormal);
 		for(int j = 0; j < surfaces_[i].num_frames*surfaces_[i].num_verts; ++j) {
 			fin.read((char*)(&normals_[i][j]), sizeof(md3_vertex));
-			vertices_[i][j].position.x = (float)normals_[i][j].coord[0] * (1.0/64);
-			vertices_[i][j].position.y = (float)normals_[i][j].coord[1] * (1.0/64);
-			vertices_[i][j].position.z = (float)normals_[i][j].coord[2] * (1.0/64);
+
+      float scale = (1.0f/64.0f);
+
+			vertices_[i][j].position.x = (float)(normals_[i][j].coord[0]) * scale;
+			vertices_[i][j].position.y = (float)(normals_[i][j].coord[1]) * scale;
+			vertices_[i][j].position.z = (float)(normals_[i][j].coord[2]) * scale;
 
 			// extracting normals with code from q3source :)
 			float lat;
@@ -136,4 +140,24 @@ Model::Model(std::string filename)
 		fin.seekg(header_.ofs_surfaces+surfaces_[i].ofs_end);
 		header_.ofs_surfaces = header_.ofs_surfaces+surfaces_[i].ofs_end;
 	}
+
+  glGenBuffers(1, &vboId_);
+  glBindBuffer(GL_ARRAY_BUFFER, vboId_);
+
+  glBufferData(GL_ARRAY_BUFFER, 
+    (surfaces_[0].num_verts)*(surfaces_[0].num_frames)*sizeof(my_vertex), 
+    NULL, 
+    GL_STATIC_DRAW);
+
+  glBufferSubData(GL_ARRAY_BUFFER, 0, (surfaces_[0].num_verts)*(surfaces_[0].num_frames)*sizeof(my_vertex), vertices_[0]);
+
+  glGenBuffers(1, &iboId_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId_);
+
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
+    (surfaces_[0].num_triangles)*sizeof(md3_triangle), 
+    NULL, 
+    GL_STATIC_DRAW); 
+
+  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, (surfaces_[0].num_triangles)*sizeof(md3_triangle), triangles_[0]); 
 }

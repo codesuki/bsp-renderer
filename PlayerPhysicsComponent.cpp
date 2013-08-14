@@ -17,7 +17,7 @@ PlayerPhysicsComponent::~PlayerPhysicsComponent(void)
 {
 }
 
-void PlayerPhysicsComponent::Update(void)
+void PlayerPhysicsComponent::Update(unsigned int time)
 {
   pitch_ += g_cmds.mouse_dy;
   if (pitch_ > 1.5707f) 

@@ -10,6 +10,7 @@ namespace shaderLoader
   int GetShader(std::string name);
   Shader* GetShader(unsigned int id);
   void CompileAllShaders();
+  Shader* CreateModelShader(std::string name);
 }
 
 #endif
