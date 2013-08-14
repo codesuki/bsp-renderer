@@ -11,7 +11,7 @@ public:
   ~PlayerPhysicsComponent(void);
 
   void ReceiveMessage(Message& message){};
-  void Update();
+  void Update(unsigned int time);
 
 private:
   Entity& entity_;

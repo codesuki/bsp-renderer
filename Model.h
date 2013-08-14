@@ -2,6 +2,7 @@
 #define __MODEL_H__
 
 #include "util.h"
+#include "Shader.h"
 
 #define Q_PI 3.14159265358979323846
 
@@ -100,6 +101,11 @@ public:
 	md3_vertex** normals_;
 
 	my_vertex** vertices_;
+
+  unsigned int vboId_;
+  unsigned int iboId_;
+
+  Shader* shader_;
 };
 
 #endif

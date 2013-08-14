@@ -5,6 +5,7 @@
 #include "util.h"
 #include "Component.h"
 #include "Message.h"
+#include "Model.h"
 
 class Entity
 {
@@ -15,7 +16,7 @@ public:
   void AddComponent(Component* component);
   void SendMessage(Message& message);
 
-  void Update();
+  void Update(unsigned int time);
 
   // share state between components
   cmd_t cmds_;
@@ -26,6 +27,9 @@ public:
   glm::vec4 look_;
   float pitch_;
   float yaw_;
+
+  Model *upper, *lower, *head;
+  unsigned int upper_frame, lower_frame;
 
 private:
   std::vector<Component*> components_;

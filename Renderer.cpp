@@ -5,8 +5,12 @@
 #include "ShaderLoader.h"
 #include "World.h"
 #include "bezier.h"
+#include "Model.h"
 
 extern World world;
+extern Model* lower;
+extern Model* upper;
+extern Model* head;
 
 Renderer::Renderer(void) : screen_width_(WIDTH), screen_height_(HEIGHT), current_shader_(nullptr)
 {
@@ -48,10 +52,10 @@ glm::mat4 Renderer::GetCameraMatrixFromEntity(Entity& entity)
   glm::vec4 up_ogl = quake2ogl * entity.up_;
   glm::vec4 position_ogl = quake2ogl * entity.position_;
 
-    //return glm::mat4(look_.x, right_.x, up_.x, 0.0f, 
-    //look_.y, right_.y, up_.y, 0.0f,
-    //look_.z, right_.z, up_.z, 0.0f, 
-    //glm::dot(-position_, look_), glm::dot(-position_, right_), glm::dot(-position_, up_), 1.0f);
+  //return glm::mat4(look_.x, right_.x, up_.x, 0.0f, 
+  //look_.y, right_.y, up_.y, 0.0f,
+  //look_.z, right_.z, up_.z, 0.0f, 
+  //glm::dot(-position_, look_), glm::dot(-position_, right_), glm::dot(-position_, up_), 1.0f);
 
   return glm::mat4(right_ogl.x, up_ogl.x, look_ogl.x, 0.0f, 
     right_ogl.y, up_ogl.y, look_ogl.y, 0.0f,
@@ -91,13 +95,13 @@ void Renderer::Setup3DRendering()
 
   // Graphical commands go here
   glEnable(GL_CULL_FACE);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE); // WAS ONE before
+  //glEnable(GL_BLEND);
+  //glBlendFunc(GL_ONE, GL_ZERO); // WAS ONE before
 }
 
 void Renderer::Setup2DRendering()
 {
-    glDisable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);
 }
 
 void Renderer::RenderFrame(float time)
@@ -105,7 +109,7 @@ void Renderer::RenderFrame(float time)
   time_ = time;
 
   SetupFrame();
-  
+
   // draw scene
   Setup3DRendering();
 
@@ -116,6 +120,8 @@ void Renderer::RenderFrame(float time)
   {
     RenderFace(renderables_[i]);
   }
+
+  RenderModel();
   glError();
 
 
@@ -224,26 +230,26 @@ void Renderer::SetupShader(Shader* shader, int lm_index)
 
   //current_shader_ = shader;
 
-      // JUST ENABLE BLENDING ALL THE TIME AND BLEND NON TRANSLUCENT TEXTURES WITH ONE ZERO
-    // only enable blending if stage 0 wants to blend with background
-    // shaders can only blend with textures
-    //if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
-    //{
-      
-      if (shader->q3_shader_.stages_.size() > 0) 
-      {
-        Blend(true);
-        BlendFunc(shader->q3_shader_.stages_[0].blendfunc[0], shader->q3_shader_.stages_[0].blendfunc[1]);
-      }
-      else
-      {
-        Blend(false);
-      }
+  // JUST ENABLE BLENDING ALL THE TIME AND BLEND NON TRANSLUCENT TEXTURES WITH ONE ZERO
+  // only enable blending if stage 0 wants to blend with background
+  // shaders can only blend with textures
+  //if (i == 0 && stage.blendfunc[0] == GL_ONE && stage.blendfunc[1] == GL_ONE)
+  //{
 
-        //BlendFunc(GL_ONE, GL_ZERO);
-    //}
+  if (shader->q3_shader_.stages_.size() > 0) 
+  {
+    Blend(true);
+    BlendFunc(shader->q3_shader_.stages_[0].blendfunc[0], shader->q3_shader_.stages_[0].blendfunc[1]);
+  }
+  else
+  {
+    Blend(false);
+  }
 
-      for (unsigned int i = 0; i < shader->q3_shader_.stages_.size(); ++i)
+  //BlendFunc(GL_ONE, GL_ZERO);
+  //}
+
+  for (unsigned int i = 0; i < shader->q3_shader_.stages_.size(); ++i)
   {
     // maybe put lightmap directly into stage so we dont need this if
     if (i == shader->lightmap_stage_ && lm_index != -1)
@@ -298,6 +304,97 @@ void Renderer::RenderFace(bsp_face* face)
   {
     RenderBillboard();
   }
+}
+
+void Renderer::RenderModel()
+{
+  glBindBuffer(GL_ARRAY_BUFFER, lower->vboId_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lower->iboId_);
+
+  Shader* shader = lower->shader_;
+
+  SetupShader(shader, -1);
+
+  glUseProgram(shader->shader_);
+  current_shader_ = shader;
+
+  modelmatrix_ = glm::translate(modelmatrix_, glm::vec3(-589.0f, -275.0f, 128.0f));
+
+
+
+  int lower_frame = 110;
+  lower_frame = world.enemy_->lower_frame;
+
+  glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+
+  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)));
+
+  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+
+
+  glDrawElements(GL_TRIANGLES, 
+    lower->surfaces_[0].num_triangles*3, 
+    GL_UNSIGNED_INT, 
+    BUFFER_OFFSET(0)); 
+
+  int ofs_tag = lower_frame*(lower->header_.num_tags);
+  glm::mat4 rotationMatrix1(lower->tags_[0+ofs_tag].axis[0].x, lower->tags_[0+ofs_tag].axis[0].y, lower->tags_[0+ofs_tag].axis[0].z, 0,
+    lower->tags_[0+ofs_tag].axis[1].x, lower->tags_[0+ofs_tag].axis[1].y, lower->tags_[0+ofs_tag].axis[1].z, 0,
+    lower->tags_[0+ofs_tag].axis[2].x, lower->tags_[0+ofs_tag].axis[2].y, lower->tags_[0+ofs_tag].axis[2].z, 0,
+    lower->tags_[0+ofs_tag].origin.x, lower->tags_[0+ofs_tag].origin.y, lower->tags_[0+ofs_tag].origin.z, 1);
+
+  modelmatrix_ = modelmatrix_ * rotationMatrix1;
+
+  glBindBuffer(GL_ARRAY_BUFFER, upper->vboId_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, upper->iboId_);
+
+  int upper_frame = 152;
+  upper_frame = world.enemy_->upper_frame;
+
+  glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+
+  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)));
+
+  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+
+  glDrawElements(GL_TRIANGLES, 
+    upper->surfaces_[0].num_triangles*3, 
+    GL_UNSIGNED_INT, 
+    BUFFER_OFFSET(0)); 
+
+
+  ofs_tag = upper_frame*(upper->header_.num_tags);
+  glm::mat4 rotationMatrix0(upper->tags_[0+ofs_tag].axis[0].x, upper->tags_[0+ofs_tag].axis[0].y, upper->tags_[0+ofs_tag].axis[0].z, 0,
+    upper->tags_[0+ofs_tag].axis[1].x, upper->tags_[0+ofs_tag].axis[1].y, upper->tags_[0+ofs_tag].axis[1].z, 0,
+    upper->tags_[0+ofs_tag].axis[2].x, upper->tags_[0+ofs_tag].axis[2].y, upper->tags_[0+ofs_tag].axis[2].z, 0,
+    upper->tags_[0+ofs_tag].origin.x, upper->tags_[0+ofs_tag].origin.y, upper->tags_[0+ofs_tag].origin.z, 1);
+
+  modelmatrix_ = modelmatrix_ * rotationMatrix0;
+
+  glBindBuffer(GL_ARRAY_BUFFER, head->vboId_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, head->iboId_);
+
+  int head_frame = 0;
+
+  glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+
+  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)));
+
+  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
+    BUFFER_OFFSET(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+
+  glDrawElements(GL_TRIANGLES, 
+    head->surfaces_[0].num_triangles*3, 
+    GL_UNSIGNED_INT, 
+    BUFFER_OFFSET(0)); 
 }
 
 void Renderer::RenderPolygon(bsp_face* face)

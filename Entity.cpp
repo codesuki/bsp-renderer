@@ -19,10 +19,10 @@ void Entity::SendMessage(Message& message)
 {
 }
 
-void Entity::Update()
+void Entity::Update(unsigned int time)
 {
   for (Component* component : components_)
   {
-    component->Update();
+    component->Update(time);
   }
 }

@@ -10,7 +10,7 @@ public:
   ~PlayerInputComponent(void);
 
   void ReceiveMessage(Message& message){};
-  void Update(){};
+  void Update(unsigned int time){};
 
   int MoveUp(Message& msg) { entity_.cmds_.forward_move += 1; };
   int MoveDown(Message& msg) { entity_.cmds_.forward_move -= 1; };
