@@ -118,7 +118,7 @@ void Shader::CompileShader()
 
 void Shader::CompileVertexShader()
 {
-  vertex_shader_ << "#version 410\n" 
+  vertex_shader_ << "#version 420\n" 
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"
     << "uniform float inTime;\n" 
@@ -225,6 +225,25 @@ void Shader::CompileVertexShader()
         << " + " << q3_shader_.stages_[i].texmods[j].translate[1] 
         << ";\n"; 
       }
+
+      if (q3_shader_.stages_[i].texmods[j].type == TCMOD::TURB)
+      {
+        vertex_shader_ << "sinval = sin(inPosition.x*inPosition.z* (1.0/128) * 0.125 + inTime * " 
+          << q3_shader_.stages_[i].texmods[j].wave.frequency << " + " << q3_shader_.stages_[i].texmods[j].wave.phase << ");\n";  
+
+        vertex_shader_ << "cosval = sin(inPosition.y* (1.0/128) * 0.125 + inTime * " 
+          << q3_shader_.stages_[i].texmods[j].wave.frequency << " + " << q3_shader_.stages_[i].texmods[j].wave.phase << ");\n";  
+
+        vertex_shader_ << "s = outTexCoord" << i << ".s;\n";
+        vertex_shader_ << "t = outTexCoord" << i << ".t;\n";
+
+        vertex_shader_ << "\toutTexCoord" << i 
+          << ".s = s + sinval * " <<  q3_shader_.stages_[i].texmods[j].wave.amplitude
+          << ";\n";
+        vertex_shader_ << "\toutTexCoord" << i 
+          << ".t = t + cosval * " <<  q3_shader_.stages_[i].texmods[j].wave.amplitude
+          << ";\n"; 
+      } 
     }
   }
   vertex_shader_ << "}";
@@ -232,7 +251,7 @@ void Shader::CompileVertexShader()
 
 void Shader::CompileTesselationShader()
 {
-  tesselation_shader_ << "#version 410\n"
+  tesselation_shader_ << "#version 420\n"
     << "layout(quads) in;\n" 
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"

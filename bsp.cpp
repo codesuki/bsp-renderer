@@ -142,7 +142,6 @@ Bsp::Bsp(std::string filename)
   fin.read((char*)visdata_->vecs, sizeof(unsigned char)*visdata_->num_vecs*visdata_->size_vecs);
 
   fin.close();
-
   // prepare patch data + tesselate
   for (int i = 0; i < num_faces_; ++i) 
   {
@@ -430,7 +429,7 @@ bool output_all_solid;
 float output_fraction;
 glm::vec4 output_plane;
 
-float trace_radius = 20.0f;
+float trace_radius = 30.0f;
 
 float Bsp::trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane)
 {

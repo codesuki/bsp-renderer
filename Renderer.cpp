@@ -51,6 +51,7 @@ glm::mat4 Renderer::GetCameraMatrixFromEntity(Entity& entity)
   glm::vec4 look_ogl = quake2ogl * entity.look_;
   glm::vec4 up_ogl = quake2ogl * entity.up_;
   glm::vec4 position_ogl = quake2ogl * entity.position_;
+  position_ogl.y += 30.0f;
 
   //return glm::mat4(look_.x, right_.x, up_.x, 0.0f, 
   //look_.y, right_.y, up_.y, 0.0f,
@@ -88,6 +89,7 @@ void Renderer::Setup3DRendering()
 
   modelmatrix_ = GetCameraMatrixFromEntity(*world.player_);
 
+  GetCameraMatrixFromEntity(*world.enemy_);
   //modelmatrix_ = glm::lookAt(glm::vec3( 50.0f, 50.0f, 50.0f ), glm::vec3(-15.0, -15.0, -15.0), glm::vec3(0.0, 1.0, 0.0));
 
   modelmatrix_ *= quake2ogl;
@@ -122,7 +124,7 @@ void Renderer::RenderFrame(float time)
   }
 
   RenderModel();
-  glError();
+  //glError();
 
 
   // draw gui and overlays
@@ -317,16 +319,26 @@ void Renderer::RenderModel()
 
   glUseProgram(shader->shader_);
   current_shader_ = shader;
+  
+  modelmatrix_ = glm::translate(modelmatrix_, glm::vec3(world.enemy_->position_)); // glm::vec3(-589.0f, -275.0f, 25.0f)
 
-  modelmatrix_ = glm::translate(modelmatrix_, glm::vec3(world.enemy_->position_));
+  float temp_pitch = world.enemy_->pitch_;
+  world.enemy_->pitch_ = 0.0f;
+  GetCameraMatrixFromEntity(*world.enemy_);
+  world.enemy_->pitch_ = temp_pitch;
 
+  glm::mat4 test = glm::mat4(world.enemy_->look_.x, world.enemy_->look_.y, world.enemy_->look_.z, 0.0f, 
+  world.enemy_->right_.x, world.enemy_->right_.y, world.enemy_->right_.z, 0.0f,
+  world.enemy_->up_.x, world.enemy_->up_.y, world.enemy_->up_.z, 0.0f, 
+  1, 1, 1, 1.0f);
 
+  glm::mat4 modelmatrix_legs = modelmatrix_ * test;
 
   int lower_frame = 110;
   lower_frame = world.enemy_->lower_frame;
 
   glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
-  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_legs));
 
   glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
     BUFFER_OFFSET(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)));
@@ -339,6 +351,16 @@ void Renderer::RenderModel()
     lower->surfaces_[0].num_triangles*3, 
     GL_UNSIGNED_INT, 
     BUFFER_OFFSET(0)); 
+
+  GetCameraMatrixFromEntity(*world.enemy_);
+
+  
+ test = glm::mat4(world.enemy_->look_.x, world.enemy_->look_.y, world.enemy_->look_.z, 0.0f, 
+  world.enemy_->right_.x, world.enemy_->right_.y, world.enemy_->right_.z, 0.0f,
+  world.enemy_->up_.x, world.enemy_->up_.y, world.enemy_->up_.z, 0.0f, 
+  1, 1, 1, 1.0f);
+
+  modelmatrix_ = modelmatrix_ * test;
 
   int ofs_tag = lower_frame*(lower->header_.num_tags);
   glm::mat4 rotationMatrix1(lower->tags_[0+ofs_tag].axis[0].x, lower->tags_[0+ofs_tag].axis[0].y, lower->tags_[0+ofs_tag].axis[0].z, 0,
@@ -416,7 +438,7 @@ void Renderer::RenderPolygon(bsp_face* face)
     BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
   glVertexAttribPointer(shader.color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
-    BUFFER_OFFSET(offset*sizeof(bsp_vertex) + sizeof(float)*10));    
+    BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)+sizeof(glm::vec2)+sizeof(glm::vec3)));    
 
   glDrawElements(GL_TRIANGLES, 
     current_face.num_meshverts, 

@@ -141,20 +141,22 @@ unsigned int Q3Shader::ParseShaderStage(const std::string* shaders, unsigned int
           token = GetToken(shaders, i);
           stage.texmods[stage.num_texmods].scale[1] = atof(token.c_str());
         } 
-        /*      else if (strcasecmp("turb", token.c_str()) == 0) 
+        else if (strcasecmp("turb", token.c_str()) == 0) 
         {
-        stage.texmods[stage.num_texmods++].type = TCMOD_TURB;
+          stage.texmods[stage.num_texmods].type = TCMOD::TURB;
 
-        end_pos = get_token_end_pos(shaders, i);
-        token = shaders->substr(i, end_pos-i);
-        i = ++end_pos;
-        stage.texmods[stage.num_texmods].scale[0] = atof(token.c_str());
+          token = GetToken(shaders, i);;
+          stage.texmods[stage.num_texmods].wave.base = atof(token.c_str());
 
-        end_pos = get_token_end_pos(shaders, i);
-        token = shaders->substr(i, end_pos-i);
-        i = ++end_pos;
-        stage.scale[1] = atof(token.c_str());
-        }  */  
+          token = GetToken(shaders, i);
+          stage.texmods[stage.num_texmods].wave.amplitude = atof(token.c_str());
+
+          token = GetToken(shaders, i);
+          stage.texmods[stage.num_texmods].wave.phase = atof(token.c_str());
+
+          token = GetToken(shaders, i);
+          stage.texmods[stage.num_texmods].wave.frequency = atof(token.c_str());
+        }  
         else if (strcasecmp("transform", token.c_str()) == 0) 
         {
           stage.texmods[stage.num_texmods].type = TCMOD::TRANSFORM;           

@@ -160,4 +160,6 @@ Model::Model(std::string filename)
     GL_STATIC_DRAW); 
 
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, (surfaces_[0].num_triangles)*sizeof(md3_triangle), triangles_[0]); 
+
+  // load model animation file
 }

@@ -56,6 +56,7 @@ int main(int argc, char **argv)
   } 
   logger::Log(logger::DEBUG, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
+
   //font.LoadFont("gfx\\2d\\bigchars.tga");
   messenger::RegisterReceiver(MESSAGE::QUIT, QuitCallback);
   messenger::RegisterReceiver(MESSAGE::NOCLIP, NoclipCallback);
@@ -76,6 +77,8 @@ int main(int argc, char **argv)
   upper->shader_ = shaderLoader::CreateModelShader("models/players/visor/red.tga");
   lower = new Model("models/players/visor/lower.md3");
   lower->shader_ = shaderLoader::CreateModelShader("models/players/visor/red.tga");
+
+  // load weapon
   
 
   unsigned int ticks = 0;   
