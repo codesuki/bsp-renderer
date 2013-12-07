@@ -1,7 +1,7 @@
 #include "Entity.h"
 
 
-Entity::Entity(void)
+Entity::Entity(void) : up_(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)), right_(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)), look_(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f))
 {
 }
 

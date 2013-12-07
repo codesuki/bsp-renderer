@@ -83,8 +83,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bezier.cpp" />
+    <ClCompile Include="BotInputComponent.cpp" />
     <ClCompile Include="bsp.cpp" />
-    <ClCompile Include="camera.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Frustum.cpp" />
@@ -105,10 +105,10 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BotInputComponent.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="bezier.h" />
     <ClInclude Include="bsp.h" />
-    <ClInclude Include="camera.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="Frustum.h" />

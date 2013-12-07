@@ -5,11 +5,10 @@ PlayerAnimationComponent::PlayerAnimationComponent(Entity& entity) :
   entity_(entity), upper_frame_(entity.upper_frame), lower_frame_(entity.lower_frame)
 {
   int skip = 153 - 90;
-  int g_lower_fps = 18;
-  int g_lower_startFrame = 173 - skip;
+  int g_lower_startFrame = 220 - skip;
 
   lower_frame_ = g_lower_startFrame;
-  upper_frame_ = 151;
+  upper_frame_ = 90;
 }
 
 
@@ -21,9 +20,9 @@ void PlayerAnimationComponent::Update(unsigned int time)
 {
   time = time/60;
   int skip = 153 - 90;
-  int g_lower_fps = 18;
-  int g_lower_startFrame = 173 - skip;
-  int g_lower_numFrames = 9;
+  int g_lower_fps = 15;
+  int g_lower_startFrame = 220 - skip;
+  int g_lower_numFrames = 10;
 
   static float fLowerLastTime = 0.0f;
 
@@ -34,9 +33,9 @@ void PlayerAnimationComponent::Update(unsigned int time)
     fLowerLastTime = time;
   }
 
-  int g_upper_fps = 15;
-  int g_upper_startFrame = 151;
-  int g_upper_numFrames = 1;
+  int g_upper_fps = 20;
+  int g_upper_startFrame = 90;
+  int g_upper_numFrames = 40;
 
   static float fUpperLastTime = 0.0f;
 

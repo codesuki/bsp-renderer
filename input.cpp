@@ -49,12 +49,13 @@ namespace input {
     //messenger::BroadcastMessage(MESSAGE::CMD_MOUSELOOK, &MouseMoveMessage(rx, ry));
     cmd_t cmds;
     memset(&cmds, 0, sizeof(cmds));
-    if (keystate[SDLK_w]) cmds.forward_move += 125;
-    if (keystate[SDLK_s]) cmds.forward_move -= 125;
+    if (keystate[SDLK_w]) cmds.forward_move -= 125;
+    if (keystate[SDLK_s]) cmds.forward_move += 125;
     if (keystate[SDLK_d]) cmds.right_move += 125;
     if (keystate[SDLK_a]) cmds.right_move -= 125;
-    cmds.mouse_dx = rx;
-    cmds.mouse_dy = ry;
+    if (keystate[SDLK_SPACE]) cmds.up_move += 125;
+    cmds.mouse_dx = -rx;
+    cmds.mouse_dy = -ry;
 
     return cmds;
   }
