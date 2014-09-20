@@ -1,5 +1,6 @@
-all:
-	g++ -g `sdl-config --cflags --libs` -lboost_filesystem -lSDL_image -lGL -lGLU *.cpp glew.c -o bsp-renderer 
+osx:
+	GYP_GENERATORS=ninja gyp bsp-loader.gyp --toplevel-dir=`pwd` --depth=0
+	ninja -C out/Default/ osx
 
-new: 
-	g++ `thirdparty/bin/sdl-config --cflags --libs` -I/home/neri/Desktop/bsp-loader-ogl/thirdparty/include/ -L/home/neri/Desktop/bsp-loader-ogl/thirdparty/lib64 -lSDL_image -lGL -lGLU *.cpp *.c -o bsp-renderer
+clean:
+	ninja -C out/Default/ -t clean

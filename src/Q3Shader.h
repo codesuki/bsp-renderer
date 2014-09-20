@@ -5,7 +5,7 @@
 
 #include "util.h"
 
-#define strcasecmp _stricmp
+//#define strcasecmp _stricmp
 
 #define MAX_TEXMODS 4
 

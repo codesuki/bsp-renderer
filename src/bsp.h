@@ -200,7 +200,7 @@ public:
   Bsp(std::string filename);
 
   int FindLeaf(const glm::vec4& camera_position);
-  std::vector<bsp_face*> Bsp::ComputeVisibleFaces(const glm::vec4& camera_position);
+  std::vector<bsp_face*> ComputeVisibleFaces(const glm::vec4& camera_position);
   bool IsClusterVisible(int cluster, int test_cluster);
 
   void load_lightmaps();

@@ -12,7 +12,7 @@
 #include <sstream>
 
 #define GLEW_STATIC
-#include "glew/glew.h"
+#include "GL/glew.h"
 
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"

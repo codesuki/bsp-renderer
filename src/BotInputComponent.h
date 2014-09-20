@@ -7,4 +7,3 @@ public:
   BotInputComponent(void);
   ~BotInputComponent(void);
 };
-

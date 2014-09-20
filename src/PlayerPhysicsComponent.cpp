@@ -1,3 +1,4 @@
+
 #include "PlayerPhysicsComponent.h"
 
 #include "util.h"
@@ -7,9 +8,15 @@ extern World world;
 extern cmd_t g_cmds;
 
 PlayerPhysicsComponent::PlayerPhysicsComponent(Entity& entity) : 
-  entity_(entity), position_(entity.position_), 
-  orientation_(entity.orientation_), cmds_(entity.cmds_), 
-  up_(entity.up_), right_(entity.right_), look_(entity.look_), pitch_(entity.pitch_), yaw_(entity.yaw_)
+    entity_(entity),
+    position_(entity.position_), 
+    orientation_(entity.orientation_),
+    cmds_(entity.cmds_), 
+    up_(entity.up_),
+    right_(entity.right_),
+    look_(entity.look_),
+    pitch_(entity.pitch_),
+    yaw_(entity.yaw_)
 {
 }
 
@@ -36,8 +43,8 @@ void PlayerPhysicsComponent::Update(unsigned int time)
   float speed = .001f * 70;//difference_;
 
   glm::vec4 accel; // add gravity + friction + air_friction
-  accel += right_ * speed * g_cmds.right_move;
-  accel += look_ * speed * g_cmds.forward_move;
+  accel += right_ * speed * static_cast<float>(g_cmds.right_move);
+  accel += look_ * speed * static_cast<float>(g_cmds.forward_move);
 
   //Accelerate();
 
