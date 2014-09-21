@@ -10,7 +10,7 @@ Shader::~Shader(void)
 
 int Shader::SetupTextures()
 {
-  logger::Log(logger::ERROR, "Shader (%i stages) for texture found. Loading texture...", q3_shader_.stages_.size());
+  logger::Log(logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", q3_shader_.stages_.size());
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {

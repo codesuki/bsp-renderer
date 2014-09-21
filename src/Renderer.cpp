@@ -73,7 +73,7 @@ void Renderer::Initialize()
   
   glViewport(0, 0, screen_width_, screen_height_);
 
-  projectionmatrix_ = glm::perspective(90.0f, (float)screen_width_/(float)screen_height_, 1.0f, 10000.f);
+  projectionmatrix_ = glm::perspective(45.0f, (float)screen_width_/(float)screen_height_, 1.0f, 10000.f);
   orthomatrix_ = glm::ortho(0.0f, (float)screen_width_, 0.0f, (float)screen_height_, -1.0f, 1.0f);
 }
 
@@ -89,13 +89,12 @@ void Renderer::Setup3DRendering()
 
   modelmatrix_ = GetCameraMatrixFromEntity(*world.player_);
 
-  GetCameraMatrixFromEntity(*world.enemy_);
+  //modelmatrix_ = GetCameraMatrixFromEntity(*world.enemy_);
   //modelmatrix_ = glm::lookAt(glm::vec3( 50.0f, 50.0f, 50.0f ), glm::vec3(-15.0, -15.0, -15.0), glm::vec3(0.0, 1.0, 0.0));
 
   modelmatrix_ *= quake2ogl;
   //g_frustum.extract_planes(modelmatrix, projectionmatrix);
 
-  // Graphical commands go here
   glEnable(GL_CULL_FACE);
   //glEnable(GL_BLEND);
   //glBlendFunc(GL_ONE, GL_ZERO); // WAS ONE before

@@ -94,10 +94,8 @@ int main(int argc, char **argv)
 
   // load weapon
   
-
   unsigned int ticks = 0;   
   unsigned int delta = 0;
-
 
   Entity player;
   PlayerInputComponent pic1(player);
@@ -119,7 +117,6 @@ int main(int argc, char **argv)
   PlayerPhysicsComponent ppc2(enemy);
   enemy.AddComponent(&pac2);
   enemy.AddComponent(&ppc2);
-
 
   world.enemy_ = &enemy;
   world.players_.push_back(&enemy);
