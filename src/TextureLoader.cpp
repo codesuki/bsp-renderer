@@ -48,10 +48,13 @@ namespace textureLoader
     }
 
     GLenum texture_format;
+    GLenum internal_format;
     GLint num_colors = image->format->BytesPerPixel;
 
     if (num_colors == 4) // contains an alpha channel
     {
+      internal_format = GL_RGBA;
+      
       if (image->format->Rmask == 0x000000ff)
         texture_format = GL_RGBA;
       else
@@ -59,6 +62,8 @@ namespace textureLoader
     } 
     else if (num_colors == 3) // no alpha channel
     {
+      internal_format = GL_RGB;
+      
       if (image->format->Rmask == 0x000000ff)
         texture_format = GL_RGB;
       else
@@ -88,7 +93,7 @@ namespace textureLoader
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Edit the texture object's image data using the information SDL_Surface gives us
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image->w, image->h, 0,
       texture_format, GL_UNSIGNED_BYTE, image->pixels);
 
     SDL_FreeSurface(image);
