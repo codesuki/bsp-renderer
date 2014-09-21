@@ -11,7 +11,6 @@
 #include <string>
 #include <sstream>
 
-#define GLEW_STATIC
 #include "GL/glew.h"
 
 #define GLM_FORCE_RADIANS
@@ -20,10 +19,9 @@
 #include "glm/gtc/matrix_access.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-//#define GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
 
 #include "SDL.h"
-//#include "SDL_opengl.h"
 #include "SDL_image.h"
 
 #define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=NULL; } }

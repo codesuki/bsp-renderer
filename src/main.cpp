@@ -42,19 +42,29 @@ int main(int argc, char **argv)
 
   IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
 
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-  SDL_WM_SetCaption("Test", "Test2");
-  SDL_SetVideoMode(WIDTH, HEIGHT, 32, SDL_OPENGL);
+  auto screen = SDL_CreateWindow("Test",
+                                        SDL_WINDOWPOS_UNDEFINED,
+                                        SDL_WINDOWPOS_UNDEFINED,
+                                        WIDTH, HEIGHT,
+                                        SDL_WINDOW_OPENGL);
 
+  auto gl_context = SDL_GL_CreateContext(screen);
+  
   // TODO: after initializing glew check if all needed functions are available.. fall back if not or just quit
+
+  glewExperimental = GL_TRUE;
   GLenum err = glewInit();
   if (err != GLEW_OK)
   {
     logger::Log(logger::ERROR, "Error: %s", glewGetErrorString(err));
   } 
-  logger::Log(logger::DEBUG, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
+  logger::Log(logger::ERROR, "Status: Using GLEW %s", glewGetString(GLEW_VERSION));
 
 
   //font.LoadFont("gfx\\2d\\bigchars.tga");
@@ -64,6 +74,10 @@ int main(int argc, char **argv)
   input::Initialize();
 
   renderer.Initialize();
+
+  GLuint vao;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
   logger::Log(logger::DEBUG, "Loading shader files");
   shaderLoader::LoadAllShaders();
@@ -115,6 +129,11 @@ int main(int argc, char **argv)
 
   while (g_running)
   {
+    if (SDL_QuitRequested())
+    {
+      g_running = false;
+    }
+    
     delta = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks(); 
 
@@ -125,10 +144,15 @@ int main(int argc, char **argv)
     //std::cout << "pos: " << player.position_[0] << " " << player.position_[1] << " " << player.position_[2] << std::endl;
 
     renderer.RenderFrame((float)ticks/1000);
+
+    SDL_GL_SwapWindow(screen);
   }
 
   shaderLoader::Deinitialize();
   textureLoader::Deinitialize();
+
+  SDL_GL_DeleteContext(gl_context);
+  SDL_DestroyWindow(screen);
 
   IMG_Quit();
   SDL_Quit();

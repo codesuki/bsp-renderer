@@ -66,12 +66,11 @@ glm::mat4 Renderer::GetCameraMatrixFromEntity(Entity& entity)
 
 void Renderer::Initialize()
 {
-  glEnable(GL_DEPTH_TEST); 
-  glDisable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
 
   glEnable(GL_CULL_FACE);
   glFrontFace(GL_CW);
-
+  
   glViewport(0, 0, screen_width_, screen_height_);
 
   projectionmatrix_ = glm::perspective(90.0f, (float)screen_width_/(float)screen_height_, 1.0f, 10000.f);
@@ -81,6 +80,7 @@ void Renderer::Initialize()
 void Renderer::SetupFrame()
 {
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 void Renderer::Setup3DRendering()
@@ -123,10 +123,8 @@ void Renderer::RenderFrame(float time)
     RenderFace(renderables_[i]);
   }
 
+  
   RenderModel();
-  //glError();
-
-
   // draw gui and overlays
   //Setup2DRendering();
 
@@ -137,9 +135,6 @@ void Renderer::RenderFrame(float time)
   //    std::stringstream fps;
   //    fps << "frametime in ms: " << delta << " fps: " << 1000 / delta;
   //    font.PrintString(fps.str(), glm::vec2(10.0f, (float)screen_height_-20.0f), glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-  // finish frame
-  SDL_GL_SwapBuffers();
 }
 
 void Renderer::Blend(bool enable)

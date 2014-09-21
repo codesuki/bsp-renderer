@@ -10,7 +10,7 @@ Shader::~Shader(void)
 
 int Shader::SetupTextures()
 {
-  logger::Log(logger::ERROR, "Shader (%i stages) for texture found. Loading texture...", 0);
+  logger::Log(logger::ERROR, "Shader (%i stages) for texture found. Loading texture...", q3_shader_.stages_.size());
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
@@ -24,7 +24,9 @@ int Shader::SetupTextures()
       if (stage.map.compare("$whiteimage") == 0) 
       {
         continue;
-      } 
+      }
+
+      logger::Log(logger::ERROR, "%s", stage.map.c_str());
       int ret = textureLoader::GetTexture(stage.map, stage.clamp);
       if (ret == -1)
       {
@@ -36,6 +38,7 @@ int Shader::SetupTextures()
       }
     }
   }
+  return 0;
 }
 
 void Shader::CompileShader()
@@ -68,10 +71,10 @@ void Shader::CompileShader()
   ofs << fragment_shader_.str();
   ofs.close();
 
-  fname = "shaders/" + name + ".tess";
-  ofs.open(fname.c_str());
-  ofs << tesselation_shader_.str();
-  ofs.close();
+  //fname = "shaders/" + name + ".tess";
+  //ofs.open(fname.c_str());
+  //ofs << tesselation_shader_.str();
+  //ofs.close();
 
   std::vector<GLuint> shaders;
   shaders.push_back(CreateShader(GL_VERTEX_SHADER, vertex_shader_.str()));
@@ -80,9 +83,6 @@ void Shader::CompileShader()
   //shaders.push_back(CreateShader(GL_TESS_EVALUATION_SHADER, tesselation_shader_.str()));
 
   shader_ = CreateProgram(shaders);
-
-  // maybe this one should be done before linking in createprogram() but cant find any difference. (maybe because only one is used atm)
-  glBindFragDataLocation(shader_, 0, "fragColor"); 
 
   texture_idx_[0] = glGetUniformLocation(shader_, "texture0"); 
   texture_idx_[1] = glGetUniformLocation(shader_, "texture1"); 
@@ -118,7 +118,7 @@ void Shader::CompileShader()
 
 void Shader::CompileVertexShader()
 {
-  vertex_shader_ << "#version 420\n" 
+  vertex_shader_ << "#version 410\n"
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"
     << "uniform float inTime;\n" 
@@ -126,8 +126,8 @@ void Shader::CompileVertexShader()
     << "layout(location = 1) in vec2 inTexCoord;\n"
     << "layout(location = 2) in vec2 inLmCoord;\n"
     << "layout(location = 3) in vec4 inColor;\n"
-    << "layout(location = 4) out vec2 outLmCoord;\n"
-    << "layout(location = 5) out vec4 outColor;\n";
+    << "layout(location = 4) out vec2 fLmCoord;\n"
+    << "layout(location = 5) out vec4 fColor;\n";
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
@@ -137,8 +137,8 @@ void Shader::CompileVertexShader()
   }
 
   vertex_shader_ << "void main() {\n"
-    << "\toutLmCoord = inLmCoord;\n"
-    << "\toutColor = inColor;\n"
+    << "\tfLmCoord = inLmCoord;\n"
+    << "\tfColor = inColor;\n"
     << "\tgl_Position = inProjectionMatrix * inModelMatrix * inPosition;\n";
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
@@ -251,7 +251,7 @@ void Shader::CompileVertexShader()
 
 void Shader::CompileTesselationShader()
 {
-  tesselation_shader_ << "#version 420\n"
+  tesselation_shader_ << "#version 410\n"
     << "layout(quads) in;\n" 
     << "uniform mat4 inProjectionMatrix;\n"
     << "uniform mat4 inModelMatrix;\n"
@@ -307,7 +307,7 @@ void Shader::CompileTesselationShader()
 
 void Shader::CompileFragmentShader()
 {
-  fragment_shader_ << "#version 410\n"; 
+  fragment_shader_ << "#version 410\n";
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
@@ -315,15 +315,15 @@ void Shader::CompileFragmentShader()
   }
 
   fragment_shader_ << "uniform float inTime;\n";
-  fragment_shader_ << "layout(location = 4) in vec2 toutLmCoord;\n";
-  fragment_shader_ << "layout(location = 5) in vec4 toutColor;\n";
+  fragment_shader_ << "layout(location = 4) in vec2 fLmCoord;\n";
+  fragment_shader_ << "layout(location = 5) in vec4 fColor;\n";
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
     if (!q3_shader_.stages_[i].map.compare("$lightmap")) 
       continue;
 
-    fragment_shader_ << "layout(location = " << 6+i << ") in vec2 toutTexCoord" << i << ";\n";
+    fragment_shader_ << "layout(location = " << 6+i << ") in vec2 outTexCoord" << i << ";\n";
   }
 
   fragment_shader_ << "layout(location = 0) out vec4 fragColor;\n";
@@ -335,12 +335,12 @@ void Shader::CompileFragmentShader()
     if (!q3_shader_.stages_[i].map.compare("$lightmap"))
     {  
       fragment_shader_ << "\tvec4 color" << i 
-        << " = texture2D(texture" << i << ", toutLmCoord.st);\n";
+        << " = texture(texture" << i << ", fLmCoord.st);\n";
     }   
     else
     {   
       fragment_shader_ << "\tvec4 color" << i 
-        << " = texture2D(texture" << i << ", toutTexCoord" << i << ".st);\n";
+        << " = texture(texture" << i << ", outTexCoord" << i << ".st);\n";
     }
   }
 
@@ -471,7 +471,8 @@ void Shader::CompileFragmentShader()
     fragment_shader_ << ");\n"; 
   }   
 
-  fragment_shader_ << "\t" << "fragColor = " << src << ";\n";  
+  fragment_shader_ << "\t" << "fragColor = " << src << ";\n";
+  //fragment_shader_ << "\t" << "fragColor = fColor;\n";  
   fragment_shader_ << "}";
 }
 
@@ -596,7 +597,7 @@ GLuint Shader::CreateProgram(const std::vector<GLuint> &shaderList)
   GLuint program = glCreateProgram();
 
   for(size_t iLoop = 0; iLoop < shaderList.size(); iLoop++)
-    glAttachShader(program, shaderList[iLoop]);
+    glAttachShader(program, shaderList[iLoop]); 
 
   glLinkProgram(program);
 
