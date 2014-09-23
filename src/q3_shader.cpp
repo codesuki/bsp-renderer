@@ -1,8 +1,7 @@
-#include "Q3Shader.h"
+#include "q3_shader.hpp"
 
 #include <string>
-
-#include "util.h"
+#include <cstdlib>
 
 Q3Shader::~Q3Shader(void)
 {

@@ -1,4 +1,4 @@
-#include "BotInputComponent.h"
+#include "bot_input_component.hpp"
 
 
 BotInputComponent::BotInputComponent(void)

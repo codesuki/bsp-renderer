@@ -1,9 +1,10 @@
-#pragma once
+#ifndef WORLD_HPP_
+#define WORLD_HPP_
 
 #include <vector>
 
-#include "bsp.h"
-#include "Entity.h"
+class Bsp;
+class Entity;
 
 class World
 {
@@ -18,9 +19,10 @@ public:
   Bsp* map_;
   Entity* player_;
   Entity* enemy_;
-
-
+  
   std::vector<Entity*> entities_;
   std::vector<Entity*> players_;
 };
+
+#endif
 

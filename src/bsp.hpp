@@ -1,7 +1,11 @@
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef BSP_H_
+#define BSP_H_
 
-#include "util.h"
+#include <vector>
+#include <map>
+
+#include <GL/glew.h>
+#include <glm/glm.hpp>
 
 class bezier;
 class Q3Shader;

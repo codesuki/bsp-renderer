@@ -1,15 +1,22 @@
-#include "bezier.h"
+#include "bezier.hpp"
 
 bezier::bezier(void)
 {
-  m_vertexes = NULL;
-  m_indexes = NULL;
+  m_vertexes = nullptr;
+  m_indexes = nullptr;
 }
 
 bezier::~bezier(void)
 {
-  SAFE_DELETE_ARRAY(m_vertexes)
-    SAFE_DELETE_ARRAY(m_indexes)
+  if (m_vertexes)
+  {
+    delete[] m_vertexes;
+  }
+
+  if (m_indexes)
+  {
+    delete[] m_indexes;
+  }
 }
 
 

@@ -1,9 +1,9 @@
-#ifndef _TEXTURELOADER_H_
-#define _TEXTURELOADER_H_
+#ifndef TEXTURELOADER_H_
+#define TEXTURELOADER_H_
 
 #include <string>
-#include "Q3Shader.h"
-#include "bsp.h"
+
+struct bsp_lightmap;
 
 namespace textureLoader
 {

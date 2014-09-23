@@ -1,13 +1,17 @@
-#ifndef __RENDERER_H__
-#define __RENDERER_H__
+#ifndef RENDERER_HPP_
+#define RENDERER_HPP_
 
-#include "util.h"
-#include "Shader.h"
-#include "bsp.h"
-#include "Entity.h"
+#include <vector>
+
+#include <glm/glm.hpp>
 
 #define WIDTH 1280
 #define HEIGHT 720
+
+class Shader;
+class Bsp;
+class Entity;
+struct bsp_face;
 
 static const glm::mat4 quake2ogl(0.0f, 0.0f, -1.0f, 0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 

@@ -1,16 +1,10 @@
-#include "PlayerAnimationComponent.h"
+#include "player_animation_component.hpp"
 
+#include "entity.hpp"
 
-PlayerAnimationComponent::PlayerAnimationComponent(Entity& entity) : 
-  entity_(entity), upper_frame_(entity.upper_frame), lower_frame_(entity.lower_frame)
+PlayerAnimationComponent::PlayerAnimationComponent()
 {
-  int skip = 153 - 90;
-  int g_lower_startFrame = 220 - skip;
-
-  lower_frame_ = g_lower_startFrame;
-  upper_frame_ = 90;
 }
-
 
 PlayerAnimationComponent::~PlayerAnimationComponent(void)
 {
@@ -28,8 +22,11 @@ void PlayerAnimationComponent::Update(unsigned int time)
 
   if (time - fLowerLastTime > (1.0 / g_lower_fps)) 
   {
-    ++lower_frame_;
-    if (lower_frame_ >= g_lower_startFrame+g_lower_numFrames) { lower_frame_ = g_lower_startFrame; }
+    ++entity_->lower_frame;
+    if (entity_->lower_frame >= g_lower_startFrame+g_lower_numFrames)
+    {
+      entity_->lower_frame = g_lower_startFrame;
+    }
     fLowerLastTime = time;
   }
 
@@ -41,8 +38,11 @@ void PlayerAnimationComponent::Update(unsigned int time)
 
   if (time - fUpperLastTime > (1.0 / g_upper_fps)) 
   {
-    ++upper_frame_;
-    if (upper_frame_ >= g_upper_startFrame+g_upper_numFrames) { upper_frame_ = g_upper_startFrame; }
+    ++entity_->upper_frame;
+    if (entity_->upper_frame >= g_upper_startFrame+g_upper_numFrames)
+    {
+      entity_->upper_frame = g_upper_startFrame;
+    }
     fUpperLastTime = time;
   }
 }

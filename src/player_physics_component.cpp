@@ -1,59 +1,74 @@
+#include "player_physics_component.hpp"
 
-#include "PlayerPhysicsComponent.h"
+#include "world.hpp"
+#include "input.hpp"
+#include "entity.hpp"
+#include "bsp.hpp"
 
-#include "util.h"
-#include "World.h"
-
+// TODO: get rid of those globals (pass to method)
 extern World world;
 extern cmd_t g_cmds;
 
-PlayerPhysicsComponent::PlayerPhysicsComponent(Entity& entity) : 
-    entity_(entity),
-    position_(entity.position_), 
-    orientation_(entity.orientation_),
-    cmds_(entity.cmds_), 
-    up_(entity.up_),
-    right_(entity.right_),
-    look_(entity.look_),
-    pitch_(entity.pitch_),
-    yaw_(entity.yaw_)
+PlayerPhysicsComponent::PlayerPhysicsComponent()
 {
 }
 
-PlayerPhysicsComponent::~PlayerPhysicsComponent(void)
+PlayerPhysicsComponent::~PlayerPhysicsComponent()
 {
+}
+
+// TODO: should be in input component
+// TODO: remove magic numbers
+void PlayerPhysicsComponent::UpdatePitch()
+{
+  auto& pitch = entity_->pitch_;
+  
+  pitch += g_cmds.mouse_dy;
+  if (pitch > 1.5707f)
+  {
+    pitch = 1.5707f;
+  }
+  if (pitch < -1.5707f)
+  {
+    pitch = -1.5707f;
+  }
+}
+
+void PlayerPhysicsComponent::UpdateYaw()
+{
+  auto& yaw = entity_->yaw_;
+  
+  yaw += g_cmds.mouse_dx;
+  if (yaw > 2*3.1415f)
+  {
+    yaw = 0.0f;
+  }
+  if (yaw < 2*-3.1415f)
+  {
+    yaw = 0.0f;
+  }
 }
 
 void PlayerPhysicsComponent::Update(unsigned int time)
 {
-  // this goes into input component!
-  pitch_ += g_cmds.mouse_dy;
-  if (pitch_ > 1.5707f) 
-    pitch_ = 1.5707f;
+  UpdatePitch();
 
-  if (pitch_ < -1.5707f)
-    pitch_ = -1.5707f;
-
-  yaw_ += g_cmds.mouse_dx;
-  if (yaw_ > 2*3.1415f)
-    yaw_ = 0.0f;
-  if (yaw_ < 2*-3.1415f)
-    yaw_ = 0.0f;
-
+  UpdateYaw();
+  
   float speed = .001f * 70;//difference_;
 
   glm::vec4 accel; // add gravity + friction + air_friction
-  accel += right_ * speed * static_cast<float>(g_cmds.right_move);
-  accel += look_ * speed * static_cast<float>(g_cmds.forward_move);
+  accel += entity_->right_ * speed * static_cast<float>(g_cmds.right_move);
+  accel += entity_->look_ * speed * static_cast<float>(g_cmds.forward_move);
 
   //Accelerate();
 
   //GroundTrace();
     // trace to ground and get plane
-  glm::vec4 start = position_;
+  glm::vec4 start = entity_->position_;
   glm::vec4 ground_plane;
   glm::vec4 ground = start;
-  ground.z -= 10.0f - 0.25f;
+  ground.z -= 10.0f - 0.25f; // this are q3 coordinates
 
   float ground_fraction = world.map_->trace(start, ground, &ground_plane);
 
@@ -68,7 +83,7 @@ void PlayerPhysicsComponent::Update(unsigned int time)
 
   float fraction = 0.0f;
 
-  if (entity_.noclip_) 
+  if (entity_->noclip_) 
   {
     //NoClipMove();
     fraction = 1.0f;
@@ -81,29 +96,29 @@ void PlayerPhysicsComponent::Update(unsigned int time)
   else
   {
     //GroundMove();
-      accel.z += -9.8f;
+    accel.z += -9.8f;
 
-  glm::vec4 wish_position;
-  glm::vec4 plane;
+    glm::vec4 wish_position;
+    glm::vec4 plane;
 
-  unsigned int bump_count;
-  for (bump_count = 0; bump_count < 4; ++bump_count)
-  {
-    wish_position = position_ + accel;
-    fraction = world.map_->trace(start, wish_position, &plane);
-    if (fraction == 1.0f)
+    unsigned int bump_count;
+    for (bump_count = 0; bump_count < 4; ++bump_count)
     {
-      break;
+      wish_position = entity_->position_ + accel;
+      fraction = world.map_->trace(start, wish_position, &plane);
+      if (fraction == 1.0f)
+      {
+        break;
+      }
+      
+      float distance = glm::dot(plane, accel);
+      accel = accel - plane * distance;
+      
+      wish_position = entity_->position_ + accel;    
     }
-
-    float distance = glm::dot(plane, accel);
-    accel = accel - plane * distance;
-
-    wish_position = position_ + accel;    
-  }
   }
 
-  position_ += accel * fraction;
+  entity_->position_ += accel * fraction;
 }
 
 //int NoClipMove()

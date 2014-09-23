@@ -1,8 +1,10 @@
-#include "Shader.h"
+#include "shader.hpp"
 
-#include "logger.h"
-#include "Q3Shader.h"
-#include "TextureLoader.h"
+#include <fstream>
+
+#include "logger.hpp"
+#include "q3_shader.hpp"
+#include "texture_loader.hpp"
 
 Shader::~Shader(void)
 {
@@ -433,7 +435,7 @@ void Shader::CompileFragmentShader()
       fragment_shader_ << "(1 - " << dst << ".a)";
       break;
     default:
-      std::cout << stage.map << " :: " << stage.blendfunc[0] << std::endl; 
+      logger::Log(logger::ERROR, "Unknown blendfunc: %s", stage.blendfunc[0]); 
     }
 
     fragment_shader_ << ") + (" << dst << " * "; 
@@ -465,7 +467,7 @@ void Shader::CompileFragmentShader()
       fragment_shader_ << "(1 - " << dst << ".a)";
       break;                  
     default:
-      std::cout << stage.map << " :: " << stage.blendfunc[1] << std::endl; 
+      logger::Log(logger::ERROR, "Unknown blendfunc: %s", stage.blendfunc[1]);
     }
 
     fragment_shader_ << ");\n"; 

@@ -1,6 +1,13 @@
-#include "TextureLoader.h"
+#include "texture_loader.hpp"
 
-#include "logger.h"
+#include <map>
+#include <vector>
+
+#include <GL/glew.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+#include "logger.hpp"
 
 namespace textureLoader
 {
@@ -68,6 +75,10 @@ namespace textureLoader
         texture_format = GL_RGB;
       else
         texture_format = GL_BGR;
+    }
+    else
+    {
+      logger::Log(logger::ERROR, "Image has unsupported number of colors");
     }
 
     // Have OpenGL generate a texture object handle for us

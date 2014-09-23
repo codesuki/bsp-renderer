@@ -1,14 +1,20 @@
-#pragma once
+#ifndef ENTITY_H_
+#define ENTITY_H_
 
 #include <vector>
 
-#include "util.h"
-#include "Component.h"
-#include "Message.h"
-#include "Model.h"
+#include <glm/glm.hpp>
+
+#include "input.hpp"
+
+class Message;
+class Component;
+class Model;
 
 class Entity
 {
+  std::vector<Component*> components_;
+  
 public:
   Entity(void);
   ~Entity(void);
@@ -31,9 +37,6 @@ public:
   Model *upper, *lower, *head;
   unsigned int upper_frame, lower_frame;
   bool noclip_;
-
-private:
-  std::vector<Component*> components_;
-
 };
 
+#endif

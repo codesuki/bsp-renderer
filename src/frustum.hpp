@@ -1,7 +1,7 @@
-#ifndef __FRUSTUM_H__
-#define __FRUSTUM_H__
+#ifndef FRUSTUM_HPP_
+#define FRUSTUM_HPP_
 
-#include "util.h"
+#include <glm/glm.hpp>
 
 class Frustum
 {

@@ -1,7 +1,10 @@
-#ifndef __FONT_H__
-#define __FONT_H__
+#ifndef FONT_HPP_
+#define FONT_HPP_
 
-#include "util.h"
+#include <string>
+
+#include <GL/glew.h>
+#include <glm/glm.hpp>
 
 // in case we support multiple fonts, maybe extract print function.
 class Font

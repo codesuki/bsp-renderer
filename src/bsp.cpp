@@ -1,13 +1,14 @@
-#include "bsp.h"
+#include "bsp.hpp"
 
-#include "util.h"
-#include "bezier.h"
-#include "frustum.h"
-#include "logger.h"
-#include "Q3Shader.h"
-#include "TextureLoader.h"
-#include "ShaderLoader.h"
+#include <fstream>
 
+#include "bezier.hpp"
+#include "frustum.hpp"
+#include "logger.hpp"
+#include "shader.hpp"
+#include "q3_shader.hpp"
+#include "texture_loader.hpp"
+#include "shader_loader.hpp"
 
 Bsp::Bsp(void)
 {
@@ -16,6 +17,8 @@ Bsp::Bsp(void)
 
 Bsp::~Bsp(void)
 {
+  // TODO: Stop leaking all that memory ;)
+  /*
   SAFE_DELETE_ARRAY(entities_->ents);
   SAFE_DELETE(entities_);
   SAFE_DELETE_ARRAY(textures_);
@@ -43,6 +46,7 @@ Bsp::~Bsp(void)
       for (unsigned int i = 0; i < (*it).second.size(); ++i)
         SAFE_DELETE(((*it).second)[i]);
   }
+  */
 }
 
 Bsp::Bsp(std::string filename)
@@ -453,7 +457,11 @@ float Bsp::trace(glm::vec4& start, glm::vec4& end, glm::vec4* plane)
   }
 }
 
-void Bsp::check_node(int index, float start_fraction, float end_fraction, glm::vec4 start, glm::vec4 end)
+void Bsp::check_node(int index,
+                     float start_fraction,
+                     float end_fraction,
+                     glm::vec4 start,
+                     glm::vec4 end)
 {
   if (index < 0)
   {

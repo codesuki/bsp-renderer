@@ -1,7 +1,7 @@
-#ifndef _BEZIER_H_
-#define _BEZIER_H_
+#ifndef BEZIER_HPP_
+#define BEZIER_HPP_
 
-#include "bsp.h"
+#include "bsp.hpp"
 
 class bezier {
 public:
@@ -21,5 +21,5 @@ public:
   unsigned int m_index_offset;
 };
 
-#endif /* _BEZIER_H_ */
+#endif
 

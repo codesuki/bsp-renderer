@@ -1,9 +1,9 @@
-#include "Messenger.h"
+#include "messenger.hpp"
 
 #include <map>
 #include <vector>
 
-#include "Message.h"
+#include "message.hpp"
 
 namespace messenger
 {

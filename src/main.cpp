@@ -1,15 +1,19 @@
-#include "util.h"
-#include "Logger.h"
-#include "messenger.h"
-#include "input.h"
-#include "Renderer.h"
-#include "World.h"
-#include "TextureLoader.h"
-#include "ShaderLoader.h"
-#include "PlayerInputComponent.h"
-#include "PlayerPhysicsComponent.h"
-#include "PlayerAnimationComponent.h"
-#include "Model.h"
+#include <GL/glew.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+#include "logger.hpp"
+#include "messenger.hpp"
+#include "input.hpp"
+#include "renderer.hpp"
+#include "world.hpp"
+#include "texture_loader.hpp"
+#include "shader_loader.hpp"
+#include "player_input_component.hpp"
+#include "player_physics_component.hpp"
+#include "player_animation_component.hpp"
+#include "model.hpp"
+#include "bsp.hpp"
 
 Renderer renderer;
 World world;
@@ -29,11 +33,16 @@ void QuitCallback(Message* msg)
 
 void NoclipCallback(Message* msg)
 {
-  logger::Log(logger::ERROR, "NOCLIP SWITCH");
+  logger::Log(logger::DEBUG, "NOCLIP SWITCH");
   world.player_->noclip_ = !world.player_->noclip_;
 }
 
-int main(int argc, char **argv)
+void ChangePlayerCallback(Message* msg)
+{
+  logger::Log(logger::DEBUG, "Switching players");
+}
+
+int main(int argc, char** argv)
 {
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
   {
@@ -49,15 +58,15 @@ int main(int argc, char **argv)
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
   auto screen = SDL_CreateWindow("Test",
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        WIDTH, HEIGHT,
-                                        SDL_WINDOW_OPENGL);
-
+                                 SDL_WINDOWPOS_UNDEFINED,
+                                 SDL_WINDOWPOS_UNDEFINED,
+                                 WIDTH, HEIGHT,
+                                 SDL_WINDOW_OPENGL);
+  
   auto gl_context = SDL_GL_CreateContext(screen);
   
-  // TODO: after initializing glew check if all needed functions are available.. fall back if not or just quit
-
+  // TODO: after initializing glew check if all needed functions are available...
+  // fall back if not or just quit
   glewExperimental = GL_TRUE;
   GLenum err = glewInit();
   if (err != GLEW_OK)
@@ -98,8 +107,8 @@ int main(int argc, char **argv)
   unsigned int delta = 0;
 
   Entity player;
-  PlayerInputComponent pic1(player);
-  PlayerPhysicsComponent ppc1(player);
+  PlayerInputComponent pic1;
+  PlayerPhysicsComponent ppc1;
   player.AddComponent(&pic1);
   player.AddComponent(&ppc1);
   player.noclip_ = true;
@@ -113,10 +122,18 @@ int main(int argc, char **argv)
   enemy.head = head;
   enemy.noclip_ = false;
 
-  PlayerAnimationComponent pac2(enemy);
-  PlayerPhysicsComponent ppc2(enemy);
+  PlayerAnimationComponent pac2;
+  PlayerPhysicsComponent ppc2;
   enemy.AddComponent(&pac2);
   enemy.AddComponent(&ppc2);
+
+  {
+    int skip = 153 - 90;
+    int g_lower_startFrame = 220 - skip;
+
+    enemy.lower_frame = g_lower_startFrame;
+    enemy.upper_frame = 90;
+  }
 
   world.enemy_ = &enemy;
   world.players_.push_back(&enemy);
@@ -136,10 +153,8 @@ int main(int argc, char **argv)
 
     g_cmds = input::Update();
     world.Update(ticks);
+    
     renderer.AddRenderables(world.map_->ComputeVisibleFaces(player.position_));
-
-    //std::cout << "pos: " << player.position_[0] << " " << player.position_[1] << " " << player.position_[2] << std::endl;
-
     renderer.RenderFrame((float)ticks/1000);
 
     SDL_GL_SwapWindow(screen);

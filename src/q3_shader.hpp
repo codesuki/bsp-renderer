@@ -1,11 +1,10 @@
-#ifndef __Q3SHADER_H__
-#define __Q3SHADER_H__
+#ifndef Q3_SHADER_HPP_
+#define Q3_SHADER_HPP_
 
 #include <vector>
+#include <string>
 
-#include "util.h"
-
-//#define strcasecmp _stricmp
+#include <GL/glew.h>
 
 #define MAX_TEXMODS 4
 
@@ -107,7 +106,7 @@ struct Q3ShaderStage {
 class Q3Shader
 {
 public:
-  Q3Shader(const std::string name) : name_(name), translucent_(false) {};
+  Q3Shader(const std::string name) :  translucent_(false), name_(name) {};
   ~Q3Shader(void);
 
   void ParseShader();

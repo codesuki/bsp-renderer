@@ -1,12 +1,12 @@
-#include "Input.h"
+#include "input.hpp"
 
 #include <map>
 
-#include "util.h"
+#include <SDL2/SDL.h>
 
-#include "messenger.h"
-#include "Message.h"
-#include "logger.h"
+#include "messenger.hpp"
+#include "message.hpp"
+#include "logger.hpp"
 
 namespace input {
   namespace 

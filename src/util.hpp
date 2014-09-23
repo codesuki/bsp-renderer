@@ -47,13 +47,5 @@ static const GLfloat quake2oglMatrix[16] =
 
 //static const glm::mat4 quake2ogl(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
-struct cmd_t 
-{
-  char forward_move;
-  char right_move;
-  char up_move;
-  float mouse_dx;
-  float mouse_dy;
-};
 
 #endif

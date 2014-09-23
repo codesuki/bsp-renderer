@@ -1,18 +1,27 @@
-#include "Renderer.h"
+#include "renderer.hpp"
 
-#include "util.h"
-#include "TextureLoader.h"
-#include "ShaderLoader.h"
-#include "World.h"
-#include "bezier.h"
-#include "Model.h"
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "texture_loader.hpp"
+#include "shader_loader.hpp"
+#include "world.hpp"
+#include "bezier.hpp"
+#include "model.hpp"
+#include "entity.hpp"
+#include "shader.hpp"
+#include "q3_shader.hpp"
 
 extern World world;
 extern Model* lower;
 extern Model* upper;
 extern Model* head;
 
-Renderer::Renderer(void) : screen_width_(WIDTH), screen_height_(HEIGHT), current_shader_(nullptr)
+Renderer::Renderer(void) : screen_width_(WIDTH),
+                           screen_height_(HEIGHT),
+                           current_shader_(nullptr)
 {
 }
 
@@ -334,17 +343,25 @@ void Renderer::RenderModel()
   glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
   glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_legs));
 
-  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)));
+  glVertexAttribPointer(shader->position_idx_,
+                        3,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)));
 
-  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+  glVertexAttribPointer(shader->tex_coord_idx_,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(lower_frame*lower->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
 
 
   glDrawElements(GL_TRIANGLES, 
-    lower->surfaces_[0].num_triangles*3, 
-    GL_UNSIGNED_INT, 
-    BUFFER_OFFSET(0)); 
+                 lower->surfaces_[0].num_triangles*3, 
+                 GL_UNSIGNED_INT, 
+                 reinterpret_cast<void*>(0)); 
 
   GetCameraMatrixFromEntity(*world.enemy_);
 
@@ -373,16 +390,24 @@ void Renderer::RenderModel()
   glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
   glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
 
-  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)));
+  glVertexAttribPointer(shader->position_idx_,
+                        3,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)));
 
-  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+  glVertexAttribPointer(shader->tex_coord_idx_,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(upper_frame*upper->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
 
   glDrawElements(GL_TRIANGLES, 
-    upper->surfaces_[0].num_triangles*3, 
-    GL_UNSIGNED_INT, 
-    BUFFER_OFFSET(0)); 
+                 upper->surfaces_[0].num_triangles*3, 
+                 GL_UNSIGNED_INT, 
+                 reinterpret_cast<void*>(0)); 
 
 
   ofs_tag = upper_frame*(upper->header_.num_tags);
@@ -398,19 +423,33 @@ void Renderer::RenderModel()
 
   int head_frame = 0;
 
-  glUniformMatrix4fv(shader->projection_idx_, 1, false, glm::value_ptr(projectionmatrix_));
-  glUniformMatrix4fv(shader->model_idx_, 1, false, glm::value_ptr(modelmatrix_));
+  glUniformMatrix4fv(shader->projection_idx_,
+                     1,
+                     false,
+                     glm::value_ptr(projectionmatrix_));
+  glUniformMatrix4fv(shader->model_idx_,
+                     1,
+                     false,
+                     glm::value_ptr(modelmatrix_));
 
-  glVertexAttribPointer(shader->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)));
+  glVertexAttribPointer(shader->position_idx_,
+                        3,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)));
 
-  glVertexAttribPointer(shader->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(my_vertex), 
-    BUFFER_OFFSET(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
+  glVertexAttribPointer(shader->tex_coord_idx_,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(my_vertex), 
+                        reinterpret_cast<void*>(head_frame*head->surfaces_[0].num_verts*sizeof(my_vertex)+sizeof(glm::vec3)*2));
 
   glDrawElements(GL_TRIANGLES, 
-    head->surfaces_[0].num_triangles*3, 
-    GL_UNSIGNED_INT, 
-    BUFFER_OFFSET(0)); 
+                 head->surfaces_[0].num_triangles*3, 
+                 GL_UNSIGNED_INT, 
+                 reinterpret_cast<void*>(0)); 
 }
 
 void Renderer::RenderPolygon(bsp_face* face)
@@ -422,22 +461,38 @@ void Renderer::RenderPolygon(bsp_face* face)
 
   Shader& shader = *current_shader_;
 
-  glVertexAttribPointer(shader.position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-    BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
+  glVertexAttribPointer(shader.position_idx_,
+                        3,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(bsp_vertex), 
+                        reinterpret_cast<void*>(offset*sizeof(bsp_vertex)));
 
-  glVertexAttribPointer(shader.tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-    BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)));
+  glVertexAttribPointer(shader.tex_coord_idx_,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(bsp_vertex), 
+                        reinterpret_cast<void*>(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)));
+  
+  glVertexAttribPointer(shader.lm_coord_idx_,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(bsp_vertex), 
+                        reinterpret_cast<void*>(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
-  glVertexAttribPointer(shader.lm_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-    BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
-
-  glVertexAttribPointer(shader.color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
-    BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)+sizeof(glm::vec2)+sizeof(glm::vec3)));    
+  glVertexAttribPointer(shader.color_idx_,
+                        4,
+                        GL_BYTE,
+                        GL_FALSE,
+                        sizeof(bsp_vertex), 
+                        reinterpret_cast<void*>(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)+sizeof(glm::vec2)+sizeof(glm::vec3)));    
 
   glDrawElements(GL_TRIANGLES, 
-    current_face.num_meshverts, 
-    GL_UNSIGNED_INT, 
-    BUFFER_OFFSET(current_face.meshvert * sizeof(bsp_meshvert))); 
+                 current_face.num_meshverts, 
+                 GL_UNSIGNED_INT, 
+                 reinterpret_cast<void*>(current_face.meshvert * sizeof(bsp_meshvert))); 
 
 }
 
@@ -465,17 +520,33 @@ void Renderer::RenderPatch(bsp_face* face)
   {
     const bezier* b = patches[i];
 
-    glVertexAttribPointer(current_shader_->position_idx_, 3, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-      BUFFER_OFFSET(b->m_vertex_offset));
+    glVertexAttribPointer(current_shader_->position_idx_,
+                          3,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(bsp_vertex), 
+                          reinterpret_cast<void*>(b->m_vertex_offset));
 
-    glVertexAttribPointer(current_shader_->tex_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)));
+    glVertexAttribPointer(current_shader_->tex_coord_idx_,
+                          2,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(bsp_vertex), 
+                          reinterpret_cast<void*>(b->m_vertex_offset+sizeof(glm::vec3)));
 
-    glVertexAttribPointer(current_shader_->lm_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex), 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
+    glVertexAttribPointer(current_shader_->lm_coord_idx_,
+                          2,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(bsp_vertex), 
+                          reinterpret_cast<void*>(b->m_vertex_offset+sizeof(glm::vec3)+sizeof(glm::vec2)));
 
-    glVertexAttribPointer(current_shader_->color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex), 
-      BUFFER_OFFSET(b->m_vertex_offset+sizeof(float)*10));        
+    glVertexAttribPointer(current_shader_->color_idx_,
+                          4,
+                          GL_BYTE,
+                          GL_FALSE,
+                          sizeof(bsp_vertex), 
+                          reinterpret_cast<void*>(b->m_vertex_offset+sizeof(float)*10));        
 
     // double work for each bezier, doesnt seem to be needed.. or maybe it does because of vertex colors! then 0 shouldnt be there
     //prepare_shader(shader, 0, current_face.lm_index);

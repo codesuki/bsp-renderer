@@ -1,7 +1,7 @@
-#ifndef _MESSENGER_H_
-#define _MESSENGER_H_
+#ifndef MESSENGER_HPP_
+#define MESSENGER_HPP_
 
-#include "Message.h"
+#include "message.hpp"
 
 enum class MESSAGE
 {

@@ -1,6 +1,6 @@
-#include "Font.h"
+#include "font.hpp"
 
-#include "util.h"
+extern glm::mat4 orthomatrix;
 
 Font::Font(void)
 {
@@ -13,12 +13,8 @@ Font::~Font(void)
 
 int Font::LoadFont(std::string font)
 {
-
-
   return 0;
 }
-
-extern glm::mat4 orthomatrix;
 
 void Font::PrintString(std::string text, glm::vec2& position, glm::vec4& color)
 {

@@ -1,4 +1,5 @@
-#include "Logger.h"
+#include "logger.hpp"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <iostream>
@@ -6,7 +7,7 @@
 namespace logger
 {
   namespace {
-    Level max_level_ = DEFAULT;
+    Level max_level_ = DEBUG;
   }
 
   void set_max_level(Level max_level)

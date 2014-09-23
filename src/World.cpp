@@ -1,5 +1,9 @@
-#include "World.h"
+#include "world.hpp"
 
+#include <string>
+
+#include "bsp.hpp"
+#include "entity.hpp"
 
 World::World(void)
 {
@@ -8,7 +12,6 @@ World::World(void)
 
 World::~World(void)
 {
-  std::cout << "World deconstructing" << std::endl;
 }
 
 void World::LoadLevel(std::string name)

@@ -1,7 +1,9 @@
-#ifndef MODEL_H_
-#define MODEL_H_
+#ifndef SHADER_LOADER_H_
+#define SHADER_LOADER_H_
 
-#include "Shader.h"
+#include <string>
+
+class Shader;
 
 namespace shaderLoader
 {

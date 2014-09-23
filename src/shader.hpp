@@ -1,13 +1,21 @@
-#ifndef __SHADER_H__
-#define __SHADER_H__
+#ifndef SHADER_H_
+#define SHADER_H_
 
-#include "util.h"
-#include "Q3Shader.h"
+#include <string>
+#include <sstream>
+#include <vector>
+
+#include <GL/glew.h>
+
+class Q3Shader;
 
 class Shader
 {
 public:
-  Shader(Q3Shader& q3_shader) : shader_(0), q3_shader_(q3_shader), lightmap_stage_(-1), compiled_(false) {  };
+  Shader(Q3Shader& q3_shader) : q3_shader_(q3_shader),
+                                shader_(0),
+                                lightmap_stage_(-1),
+                                compiled_(false) {};
   ~Shader(void);
 
   void CompileShader();
