@@ -75,7 +75,7 @@ private:
   glm::mat4 orthomatrix_;
 
   float time_;
-  
+
   Bsp* bsp_;
 
   std::vector<bsp_face*> renderables_;
