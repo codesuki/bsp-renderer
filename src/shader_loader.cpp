@@ -3,7 +3,7 @@
 #include <fstream>
 #include <map>
 
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 
 #include "logger.hpp"
 #include "q3_shader.hpp"

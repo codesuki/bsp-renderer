@@ -12,7 +12,7 @@ Shader::~Shader(void)
 
 int Shader::SetupTextures()
 {
-  logger::Log(logger::DEBUG, "Shader (%i stages) for texture found. Loading texture...", q3_shader_.stages_.size());
+  logger::Log(logger::DEFAULT, "Shader (%i stages) for texture found. Loading texture...", q3_shader_.stages_.size());
 
   for (unsigned int i = 0; i < q3_shader_.stages_.size(); ++i)
   {
@@ -28,7 +28,7 @@ int Shader::SetupTextures()
         continue;
       }
 
-      logger::Log(logger::ERROR, "%s", stage.map.c_str());
+      logger::Log(logger::DEFAULT, "%s", stage.map.c_str());
       int ret = textureLoader::GetTexture(stage.map, stage.clamp);
       if (ret == -1)
       {

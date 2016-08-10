@@ -3,8 +3,7 @@
 
 #include "message.hpp"
 
-enum class MESSAGE
-{
+enum class MESSAGE {
   CMD_FORWARD,
   CMD_BACKWARD,
   CMD_RIGHT,
@@ -13,18 +12,18 @@ enum class MESSAGE
   CMD_DOWN,
   CMD_MOUSELOOK,
   QUIT,
-  NOCLIP
+  NOCLIP,
+  NEXT_PLAYER,
 };
 
 // eventually replace bool with message
-typedef void (*CallbackType)(Message*);
+typedef void (*CallbackType)(Message *);
 
-namespace messenger
-{
-  int RegisterReceiver(MESSAGE msg, CallbackType callback);
-  int UnregisterReceiver();
+namespace messenger {
+int RegisterReceiver(MESSAGE msg, CallbackType callback);
+int UnregisterReceiver();
 
-  int BroadcastMessage(MESSAGE type, Message* msg);
+int BroadcastMessage(MESSAGE type, Message *msg);
 }
 
 #endif

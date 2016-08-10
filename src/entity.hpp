@@ -11,21 +11,21 @@ class Message;
 class Component;
 class Model;
 
-class Entity
-{
-  std::vector<Component*> components_;
-  
+class Entity {
+  std::vector<Component *> components_;
+
 public:
   Entity(void);
   ~Entity(void);
 
-  void AddComponent(Component* component);
-  void SendMessage(Message& message);
+  void AddComponent(Component *component);
+  void SendMessage(Message &message);
 
   void Update(unsigned int time);
 
   // share state between components
   cmd_t cmds_;
+  glm::vec4 velocity_;
   glm::vec4 position_;
   glm::vec2 orientation_;
   glm::vec4 up_;

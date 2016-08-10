@@ -8,6 +8,8 @@ class Component
 {
  protected:
   Entity* entity_;
+
+  bool is_active_ = true;
   
  public:
   
@@ -18,6 +20,11 @@ class Component
   inline void set_entity(Entity* entity)
   {
     entity_ = entity;
+  }
+
+  inline void set_active(bool is_active)
+  {
+    is_active_ = is_active;
   }
 };
 
