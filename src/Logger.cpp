@@ -1,30 +1,34 @@
 #include "logger.hpp"
 
-#include <stdio.h>
-#include <stdarg.h>
 #include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
 
-namespace logger
-{
-  namespace {
-    Level max_level_ = DEBUG;
-  }
+namespace logger {
+namespace {
+Level max_level_ = DEBUG;
+}
 
-  void set_max_level(Level max_level)
-  {
-  }
+void set_max_level(Level max_level) {}
 
-  void Log(Level level, const char *fmt, ...)
-  {
-    if (level > max_level_)
-      return;
+void Log(Level level, const char *fmt, va_list arg) {
+  if (level > max_level_)
+    return;
+  vprintf(fmt, arg);
+  std::cout << std::endl;
+}
 
-    va_list arg;
-    va_start(arg, fmt);
-    vprintf(fmt, arg);
-    va_end(arg);
+void Log(Level level, const char *fmt, ...) {
+  va_list arg;
+  va_start(arg, fmt);
+  Log(level, fmt, arg);
+  va_end(arg);
+}
 
-    std::cout << std::endl;
-  }
-
+void Debug(const char *fmt, ...) {
+  va_list arg;
+  va_start(arg, fmt);
+  Log(DEBUG, fmt, arg);
+  va_end(arg);
+}
 }
