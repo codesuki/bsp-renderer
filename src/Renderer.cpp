@@ -280,7 +280,7 @@ void Renderer::RenderFace(bsp_face *face) {
   } else if (current_face.type == PATCH) {
     RenderPatch(face);
   } else if (current_face.type == BILLBOARD) {
-    RenderBillboard();
+    // RenderBillboard();
   }
 }
 
@@ -453,28 +453,43 @@ void Renderer::RenderPolygon(bsp_face *face) {
 }
 
 void Renderer::RenderPatch(bsp_face *face) {
+  Shader &shader = *current_shader_;
+  auto offset = face->vertex;
+
+  glVertexAttribPointer(shader.position_idx_, 3, GL_FLOAT, GL_FALSE,
+                        sizeof(bsp_vertex),
+                        reinterpret_cast<void *>(offset * sizeof(bsp_vertex)));
+
+  glVertexAttribPointer(shader.tex_coord_idx_, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(bsp_vertex),
+                        reinterpret_cast<void *>(offset * sizeof(bsp_vertex) +
+                                                 sizeof(glm::vec3)));
+
+  glVertexAttribPointer(
+      shader.lm_coord_idx_, 2, GL_FLOAT, GL_FALSE, sizeof(bsp_vertex),
+      reinterpret_cast<void *>(offset * sizeof(bsp_vertex) + sizeof(glm::vec3) +
+                               sizeof(glm::vec2)));
+
+  glVertexAttribPointer(
+      shader.color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex),
+      reinterpret_cast<void *>(offset * sizeof(bsp_vertex) + sizeof(glm::vec3) +
+                               sizeof(glm::vec2) + sizeof(glm::vec2) +
+                               sizeof(glm::vec3)));
+
+  float subdivisions[] = {10.0f, 10.0f, 10.0f, 10.0f};
+  glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, subdivisions);
+  glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, subdivisions);
+  glPatchParameteri(GL_PATCH_VERTICES, face->num_vertices);
+  glDrawArrays(GL_PATCHES, 0, face->num_vertices);
+
   /*
-  glVertexAttribPointer(shader.position_idx, 3, GL_FLOAT, GL_FALSE, stride,
-  BUFFER_OFFSET(offset*sizeof(bsp_vertex)));
-
-  glVertexAttribPointer(shader.tex_coord_idx, 2, GL_FLOAT, GL_FALSE, stride,
-  BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)));
-
-  glVertexAttribPointer(shader.lm_coord_idx, 2, GL_FLOAT, GL_FALSE, stride,
-  BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(glm::vec3)+sizeof(glm::vec2)));
-
-  glVertexAttribPointer(shader.color_idx, 4, GL_BYTE, GL_FALSE, stride,
-  BUFFER_OFFSET(offset*sizeof(bsp_vertex)+sizeof(float)*10));
-
-  glPatchParameteri(GL_PATCH_VERTICES, current_face.num_vertices);
-  glDrawArrays(GL_PATCHES, 0, current_face.num_vertices);
-  */
   std::vector<bezier *> patches = world.map_->patches_[face];
 
   for (int i = 0; i < patches.size(); ++i) {
     const bezier *b = patches[i];
 
-    glVertexAttribPointer(current_shader_->position_idx_, 3, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(current_shader_->position_idx_, 3, GL_FLOAT,
+  GL_FALSE,
                           sizeof(bsp_vertex),
                           reinterpret_cast<void *>(b->m_vertex_offset));
 
@@ -483,17 +498,20 @@ void Renderer::RenderPatch(bsp_face *face) {
         sizeof(bsp_vertex),
         reinterpret_cast<void *>(b->m_vertex_offset + sizeof(glm::vec3)));
 
-    glVertexAttribPointer(current_shader_->lm_coord_idx_, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(current_shader_->lm_coord_idx_, 2, GL_FLOAT,
+  GL_FALSE,
                           sizeof(bsp_vertex),
                           reinterpret_cast<void *>(b->m_vertex_offset +
                                                    sizeof(glm::vec3) +
                                                    sizeof(glm::vec2)));
 
     glVertexAttribPointer(
-        current_shader_->color_idx_, 4, GL_BYTE, GL_FALSE, sizeof(bsp_vertex),
+        current_shader_->color_idx_, 4, GL_BYTE, GL_FALSE,
+  sizeof(bsp_vertex),
         reinterpret_cast<void *>(b->m_vertex_offset + sizeof(float) * 10));
 
-    // double work for each bezier, doesnt seem to be needed.. or maybe it does
+    // double work for each bezier, doesnt seem to be needed.. or maybe it
+  does
     // because of vertex colors! then 0 shouldnt be there
     // prepare_shader(shader, 0, current_face.lm_index);
 
@@ -507,6 +525,8 @@ void Renderer::RenderPatch(bsp_face *face) {
     glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei *)count,
                         GL_UNSIGNED_INT, (const GLvoid **)indices, 10);
   }
+
+  */
 }
 
 void Renderer::RenderBillboard() {}
