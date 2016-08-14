@@ -1,21 +1,19 @@
 #ifndef SHADER_H_
 #define SHADER_H_
 
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include <GL/glew.h>
 
 class Q3Shader;
 
-class Shader
-{
+class Shader {
 public:
-  Shader(Q3Shader& q3_shader) : q3_shader_(q3_shader),
-                                shader_(0),
-                                lightmap_stage_(-1),
-                                compiled_(false) {};
+  Shader(Q3Shader &q3_shader)
+      : q3_shader_(q3_shader), shader_(0), lightmap_stage_(-1),
+        compiled_(false){};
   ~Shader(void);
 
   void CompileShader();
@@ -26,10 +24,10 @@ public:
 
   int SetupTextures();
 
-  GLuint CreateShader(GLenum shader_type, const std::string& shader_file);
-  GLuint CreateProgram(const std::vector<GLuint>& shader_list);
+  GLuint CreateShader(GLenum shader_type, const std::string &shader_file);
+  GLuint CreateProgram(const std::vector<GLuint> &shader_list);
 
-  Q3Shader& q3_shader_;
+  Q3Shader &q3_shader_;
 
   std::stringstream vertex_shader_;
   std::stringstream tesselation_shader_;
@@ -37,7 +35,7 @@ public:
 
   unsigned int shader_;
 
-  unsigned int texture_idx_[8]; 
+  unsigned int texture_idx_[8];
   unsigned int projection_idx_;
   unsigned int model_idx_;
   unsigned int time_idx_;
@@ -46,6 +44,8 @@ public:
   unsigned int lm_coord_idx_;
   unsigned int color_idx_;
 
+  unsigned int patchWidth_, patchHeight_;
+
   int lightmap_stage_;
   unsigned int texture_id_[8];
 
@@ -53,4 +53,3 @@ public:
 };
 
 #endif
-

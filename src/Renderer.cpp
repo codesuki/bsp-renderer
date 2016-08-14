@@ -194,8 +194,9 @@ void Renderer::SetupShader(Shader *shader, int lm_index) {
   // the light map could change even though we have the same shaders
   // check and set new lightmap, leave everthing else the same
   if (shader == current_shader_ && lm_index != -1) {
-    if (lm_index == current_lightmap_)
+    if (lm_index == current_lightmap_) {
       return;
+    }
 
     if (shader->lightmap_stage_ == -1) {
       return;
@@ -276,7 +277,7 @@ void Renderer::RenderFace(bsp_face *face) {
                      glm::value_ptr(modelmatrix_));
 
   if (current_face.type == POLYGON || current_face.type == MESH) {
-    RenderPolygon(face);
+    // RenderPolygon(face);
   } else if (current_face.type == PATCH) {
     RenderPatch(face);
   } else if (current_face.type == BILLBOARD) {
@@ -455,6 +456,21 @@ void Renderer::RenderPolygon(bsp_face *face) {
 void Renderer::RenderPatch(bsp_face *face) {
   Shader &shader = *current_shader_;
   auto offset = face->vertex;
+
+  glUniform1ui(shader.patchWidth_, face->size[0]);
+  glUniform1ui(shader.patchHeight_, face->size[1]);
+
+  if ((face->size[0] == 15 || face->size[1] == 15) ||
+      (face->size[0] == 9 && face->size[1] == 5)) {
+    logger::Debug("patch size: %d %d %d", face->size[0], face->size[1],
+                  face->num_vertices);
+    return;
+  }
+
+  if (face->size[0] * face->size[1] != face->num_vertices) {
+    logger::Debug("VERY BAD VERY BAD");
+    return;
+  }
 
   glVertexAttribPointer(shader.position_idx_, 3, GL_FLOAT, GL_FALSE,
                         sizeof(bsp_vertex),

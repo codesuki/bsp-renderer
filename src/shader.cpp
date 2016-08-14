@@ -1,5 +1,6 @@
 #include "shader.hpp"
 
+#include <cmath>
 #include <fstream>
 
 #include "logger.hpp"
@@ -86,6 +87,9 @@ void Shader::CompileShader() {
   texture_idx_[5] = glGetUniformLocation(shader_, "texture5");
   texture_idx_[6] = glGetUniformLocation(shader_, "texture6");
   texture_idx_[7] = glGetUniformLocation(shader_, "texture7");
+
+  patchWidth_ = glGetUniformLocation(shader_, "patchWidth");
+  patchHeight_ = glGetUniformLocation(shader_, "patchHeight");
 
   projection_idx_ = glGetUniformLocation(shader_, "inProjectionMatrix");
   model_idx_ = glGetUniformLocation(shader_, "inModelMatrix");
@@ -259,12 +263,75 @@ void Shader::CompileVertexShader() {
   }
   vertex_shader_ << "}";
 }
+/*
+void tess() {
+  tesselation_shader_
+      << "void selectControlPoints4(in vec4 original[], out vec4 controls[], out
+"
+         "float "
+         "u, out float v) {"
+      << "\tint numX = (patchWidth - 1) / 2;\n"
+      << "int numY = (patchHeight - 1) / 2;\n"
 
+      << "float thresholdX = 1.0f / numX;\n"
+      << "float thresholdY = 1.0f / numY;\n"
+
+      << "int activeX = std::floor(u / thresholdX);\n"
+      << "int activeY = std::floor(v / thresholdY);\n"
+
+      << "vec4 controls[9] = vec4[](original[(activeY * 2) * width + (activeX "
+         "* 2)],"
+      << "original[(activeY * 2) * width + (activeX * 2) + 1],"
+      << "original[(activeY * 2) * width + (activeX * 2) + 2],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2)],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2) + 1],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2) + 2],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2)],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2) + 1],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2) + 2]);"
+
+      << "// correct u,v for this patch"
+      << "float correctU = mod(u, thresholdX);"
+      << "float correctV = mod(v, thresholdY);"
+      << "}"
+
+      tesselation_shader_
+      << "selectControlPoints2(in vec2 original[], out vec2 controls[], out "
+         "float "
+         "u, out float v) {"
+      << "int numX = (patchWidth - 1) / 2;\n"
+      << "int numY = (patchHeight - 1) / 2;\n"
+
+      << "float thresholdX = 1.0f / numX;\n"
+      << "float thresholdY = 1.0f / numY;\n"
+
+      << "int activeX = std::floor(u / thresholdX);\n"
+      << "int activeY = std::floor(v / thresholdY);\n"
+
+      << "vec4 controls[9] = vec4[](original[(activeY * 2) * width + (activeX "
+         "* 2)],"
+      << "original[(activeY * 2) * width + (activeX * 2) + 1],"
+      << "original[(activeY * 2) * width + (activeX * 2) + 2],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2)],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2) + 1],"
+      << "original[((activeY * 2) + 1) * width + (activeX * 2) + 2],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2)],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2) + 1],"
+      << "original[((activeY * 2) + 2) * width + (activeX * 2) + 2]);"
+
+      << "// correct u,v for this patch"
+      << "float correctU = mod(u, thresholdX);"
+      << "float correctV = mod(v, thresholdY);"
+      << "}"
+}
+*/
 void Shader::CompileTesselationShader() {
   tesselation_shader_ << "#version 410\n"
                       << "layout(quads, cw) in;\n"
                       << "uniform mat4 inProjectionMatrix;\n"
                       << "uniform mat4 inModelMatrix;\n"
+                      << "uniform uint patchWidth;\n"
+                      << "uniform uint patchHeight;\n"
                       << "layout(location = 4) in vec2 fLmCoord[];\n"
                       << "layout(location = 5) in vec4 fColor[];\n"
                       << "layout(location = 4) out vec2 toutLmCoord;\n"
@@ -284,12 +351,88 @@ void Shader::CompileTesselationShader() {
                         << ") out vec2 toutTexCoord" << i << ";\n";
   }
 
+  tesselation_shader_
+      << "\nvoid selectControlPoints4(in vec4 original[150], out vec4 "
+         "controls[9], "
+         "inout "
+         "double "
+         "u, inout double v) {\n"
+      << "\tuint numX = (patchWidth - 1) / 2;\n"
+      << "\tuint numY = (patchHeight - 1) / 2;\n\n"
+
+      << "\tdouble thresholdX = 1.0 / numX;\n"
+      << "\tdouble thresholdY = 1.0 / numY;\n\n"
+
+      << "\tint activeX = int(min(floor(u / thresholdX), numX - 1.0));\n"
+      << "\tint activeY = int(min(floor(v / thresholdY), numY - 1.0));\n\n"
+
+      << "\t controls = vec4[](original[(activeY * 2) * patchWidth + "
+         "(activeX * 2)],\n"
+      << "\t\toriginal[(activeY * 2) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[(activeY * 2) * patchWidth + (activeX * 2) + 2],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2)],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2) + 2],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2)],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2) + "
+         "2]);\n\n"
+
+      << "\t// correct u,v for this patch\n"
+      << "\tu = (1.0 / thresholdX) * (u - activeX * thresholdX);"
+      << "\tv = (1.0 / thresholdY) * (v - activeY * thresholdY);"
+      << "\n}\n";
+
+  tesselation_shader_
+      << "\nvoid selectControlPoints2(in vec2 original[150], out vec2 "
+         "controls[9], "
+         "inout "
+         "float "
+         "u, inout float v) {\n"
+      << "\tuint numX = (patchWidth - 1) / 2;\n"
+      << "\tuint numY = (patchHeight - 1) / 2;\n\n"
+
+      << "\tfloat thresholdX = 1.0 / numX;\n"
+      << "\tfloat thresholdY = 1.0 / numY;\n\n"
+
+      << "\tint activeX = int(min(floor(u / thresholdX), numX - 1));\n"
+      << "\tint activeY = int(min(floor(v / thresholdY), numY - 1));\n\n"
+
+      << "\tcontrols = vec2[](original[(activeY * 2) * patchWidth + "
+         "(activeX * 2)],\n"
+      << "\t\toriginal[(activeY * 2) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[(activeY * 2) * patchWidth + (activeX * 2) + 2],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2)],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[((activeY * 2) + 1) * patchWidth + (activeX * 2) + 2],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2)],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2) + 1],\n"
+      << "\t\toriginal[((activeY * 2) + 2) * patchWidth + (activeX * 2) + "
+         "2]);\n\n"
+
+      << "\t// correct u,v for this patch\n"
+      << "\tu = (1.0 / thresholdX) * (u - activeX * thresholdX);"
+      << "\tv = (1.0 / thresholdY) * (v - activeY * thresholdY);"
+      << "\n}\n";
+
+  /*
   tesselation_shader_ << "vec4 bezier(in float t, in uint start) {\n";
   tesselation_shader_
       << "\treturn gl_in[start].gl_Position * (1 - t) * (1 - t) + "
          "(gl_in[start + 1].gl_Position) * 2 * t * (1 - t) + "
          "(gl_in[start + 2].gl_Position) * t * t;\n";
   tesselation_shader_ << "}\n";
+  */
+
+  /*   float newU = (1.0 / thresholdX) * (u - activeX * thresholdX);
+  float newV = (1.0 / thresholdY) * (v - activeY * thresholdY);
+
+  std::cout << "numX numY: " << numX << " " << numY
+  <<  " threshX threshY: " << thresholdX << " " << thresholdY
+  << " activeX activeY: " << activeX << " " <<  activeY << std::endl;
+
+  std::cout << "newU newV: " << newU << " " << newV << std::endl;
+  */
 
   tesselation_shader_ << "vec2 bezier2(in float t, in vec2 controls[3]) {\n";
   tesselation_shader_ << "\treturn controls[0] * (1 - t) * (1 - t) + "
@@ -353,7 +496,29 @@ void Shader::CompileTesselationShader() {
   tesselation_shader_ << "\tcontrol4 = vec4[3](color1, color2, color3);\n"
                       << "\ttoutColor = bezier4(v, control4);\n";
 
-  // TODO: bigger patches exist
+  tesselation_shader_
+      << "\tvec4 inputArr[150];\n"
+      << "\tfor (int i = 0; i <= gl_PatchVerticesIn; i++) {\n"
+      << "\t\tinputArr[i] = gl_in[i].gl_Position;\n"
+      << "}\n"
+      << "\tvec4 currentControl[9];\n"
+      << "\tdouble nu = u; double nv = v;"
+      << "\tselectControlPoints4(inputArr, currentControl, nu, nv);"
+      << "u = float(nu); v = float(nv);";
+
+  tesselation_shader_ << "\tcontrol4 = vec4[3](currentControl[0], "
+                         "currentControl[1], "
+                         "currentControl[2]);\n";
+  tesselation_shader_ << "\tvec4 base1 = bezier4(u, control4);\n";
+  tesselation_shader_ << "\tcontrol4 = vec4[3](currentControl[3], "
+                         "currentControl[4], "
+                         "currentControl[5]);\n";
+  tesselation_shader_ << "\tvec4 base2 = bezier4(u, control4);\n";
+  tesselation_shader_ << "\tcontrol4 = vec4[3](currentControl[6], "
+                         "currentControl[7], "
+                         "currentControl[8]);\n";
+
+  /*
   tesselation_shader_ << "\tcontrol4 = vec4[3](gl_in[0].gl_Position, "
                          "gl_in[1].gl_Position, "
                          "gl_in[2].gl_Position);\n";
@@ -365,6 +530,8 @@ void Shader::CompileTesselationShader() {
   tesselation_shader_ << "\tcontrol4 = vec4[3](gl_in[6].gl_Position, "
                          "gl_in[7].gl_Position, "
                          "gl_in[8].gl_Position);\n";
+*/
+
   tesselation_shader_ << "\tvec4 base3 = bezier4(u, control4);\n";
 
   tesselation_shader_ << "\tcontrol4 = vec4[3](base1, base2, base3);\n"
